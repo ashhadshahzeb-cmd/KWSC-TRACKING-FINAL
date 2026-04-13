@@ -28,12 +28,6 @@ import { useGSAP } from "@gsap/react";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/chart-of-accounts", icon: ListTree, label: "Chart of Accounts" },
-  { to: "/general-ledger", icon: BookOpen, label: "General Ledger" },
-  { to: "/bank-accounts", icon: Landmark, label: "Bank Accounts" },
-  { to: "/transactions", icon: ArrowLeftRight, label: "Transactions" },
-  { to: "/bank-entries", icon: CreditCard, label: "Bank Entries" },
-  { to: "/reports", icon: FileText, label: "Reports" },
 ];
 
 const categories = [
@@ -41,14 +35,7 @@ const categories = [
     id: "book-section",
     label: "Book Section",
     items: [
-      { to: "/book-section/bill-dispatch", label: "Bill Dispatch" },
       { to: "/book-section/file-tracking", label: "File Tracking" },
-      { to: "/book-section/emp-details", label: "Emp Details" },
-      { to: "/book-section/medical", label: "Medical" },
-      { to: "/book-section/contractor", label: "Contractor" },
-      { to: "/book-section/security-deposit", label: "Security Deposit" },
-      { to: "/book-section/pol-bills", label: "Pol Bills" },
-      { to: "/book-section/contigencies", label: "Contigencies" },
     ]
   }
 ];
@@ -174,23 +161,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               );
             })}
             
-            <NavLink
-              to="/book-section/cheque-record"
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center w-full px-4 py-3 text-sm transition-colors mt-1",
-                  isActive
-                    ? "bg-black/40 text-primary font-medium"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )
-              }
-            >
-              {!collapsed ? (
-                <span>Cheques Record</span>
-              ) : (
-                <span className="w-full text-center text-xs font-semibold">CR</span>
-              )}
-            </NavLink>
           </div>
         </nav>
 
