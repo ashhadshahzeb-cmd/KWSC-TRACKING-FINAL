@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { LogIn, UserPlus, ShieldCheck, Mail, Lock, User as UserIcon, Loader2 } from 'lucide-react';
+import { LogIn, UserPlus, ShieldCheck, Mail, Lock, User as UserIcon, Loader2, Building2, ChevronDown } from 'lucide-react';
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import { useAuth, DEPARTMENT_USERS } from '@/contexts/AuthContext';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,8 +17,10 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [showQuickAccess, setShowQuickAccess] = useState(false);
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
+  const { localSignIn } = useAuth();
 
   useGSAP(() => {
     // Premium elastic entry animation for the main card
@@ -48,8 +51,21 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
+        // Try local department login first
+        const localResult = await localSignIn(email, password);
+        if (localResult.success) {
+          toast.success('Welcome! Login successful.');
+          navigate('/');
+          return;
+        }
+
+        // Fallback to Supabase auth
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          // If Supabase also fails, show the local error
+          toast.error(localResult.error || error.message);
+          return;
+        }
         toast.success('Welcome! Login successful.');
         navigate('/');
       } else {
@@ -88,6 +104,12 @@ export default function AuthPage() {
     }
   };
 
+  const handleQuickFill = (dept: typeof DEPARTMENT_USERS[0]) => {
+    setEmail(dept.email);
+    setPassword(dept.password);
+    setShowQuickAccess(false);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a0c] relative overflow-hidden p-4">
       {/* Background Decorative Elements */}
@@ -106,7 +128,7 @@ export default function AuthPage() {
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             {isLogin 
-              ? 'Enter your credentials to access the finance system' 
+              ? 'Enter your department credentials to access the finance system' 
               : 'Register as an administrator for the KWSC system'}
           </CardDescription>
         </CardHeader>
@@ -135,7 +157,7 @@ export default function AuthPage() {
                 <Input 
                   id="email" 
                   type="email" 
-                  placeholder="name@kwsc.gov.pk" 
+                  placeholder="name@kwsb.gov.pk" 
                   className="pl-10 bg-white/5 border-white/10" 
                   required 
                   value={email}
@@ -159,6 +181,8 @@ export default function AuthPage() {
                 />
               </div>
             </div>
+
+            {/* Quick Access Panel Removed per request */}
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-11" disabled={loading}>

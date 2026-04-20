@@ -27,25 +27,37 @@ export default function PublicTracking() {
     const fetchRecord = async () => {
       setLoading(true);
       try {
-        // In a real app, we'd query Supabase. For now, we'll simulate finding it.
-        // We'll look for a record with matching diary or receiving number.
-        // This is a mockup of the public tracking view.
-        setTimeout(() => {
+        const { data, error } = await supabase
+          .from('file_tracking_records' as any)
+          .select('*')
+          .or(`cfo_diary_number.eq.${diaryNo},receiving_number.eq.${receivingNo}`)
+          .maybeSingle();
+
+        if (data) {
+          setRecord({
+            cfo_diary_number: data.cfo_diary_number,
+            receiving_number: data.receiving_number,
+            subject: data.subject,
+            mainCategory: data.mainCategory,
+            subCategory: data.subCategory,
+            status: "In-Progress", 
+            forward_to: data.mark_to,
+            history: data.history || []
+          });
+        } else {
+          // Fallback mockup if no record found (for local dev testing without DB)
           setRecord({
             cfo_diary_number: diaryNo,
             receiving_number: receivingNo,
-            subject: "Sample File Tracking Record",
+            subject: "Sample File Tracking Record (Record Not Found in DB)",
             mainCategory: "employee",
             subCategory: "medical_case",
-            status: "forwarded",
-            forward_to: "cia",
-            history: [
-              { date: new Date().toISOString(), processed_by: "CFO OFFICE", remarks: "File initiated", mark_to: "cia" },
-              { date: new Date(Date.now() - 86400000).toISOString(), processed_by: "INWARD SECTION", remarks: "Received from department", mark_to: "cfo" }
-            ]
+            status: "Unknown",
+            forward_to: "N/A",
+            history: []
           });
-          setLoading(false);
-        }, 800);
+        }
+        setLoading(false);
       } catch (err) {
         setLoading(false);
       }

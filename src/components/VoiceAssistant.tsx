@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, X, Activity } from 'lucide-react';
+import { Mic, MicOff, X, Activity, Minus, Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useVoice } from '@/contexts/VoiceContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 // Type definitions for Speech Recognition API
@@ -23,34 +24,56 @@ export default function VoiceAssistant() {
   const navigate = useNavigate();
   const location = useLocation();
   const { setSearchQuery, setSearchType, setOpenModal, formData, setFormData, openModal } = useVoice();
+  const { userRole, isAdmin } = useAuth();
 
   const [conversationState, setConversationState] = useState<'initial' | 'asked_name' | 'general'>('initial');
   const [userName, setUserName] = useState('');
   const [textInput, setTextInput] = useState('');
+  const [isMinimized, setIsMinimized] = useState(false);
 
   // Only trigger initial greeting ONCE when the app starts.
   useEffect(() => {
-    // Only run this if we are on dashboard AND haven't greeted yet
-    if (location.pathname === '/' && conversationState === 'initial') {
+    if (conversationState === 'initial' && userRole) {
       const timer = setTimeout(() => {
-        const greeting = "Hello! I am FinLedger AI Assistant. What is your name?";
-        setConversationState('asked_name');
+        let greeting = "";
+        let urduGreeting = "";
+
+        if (userRole === 'cfo') {
+          greeting = "Assalam-o-Alaikum CFO Sahab! Aap kaise hain? Main aapki kya madad kar sakta hoon?";
+          urduGreeting = "Assalam-o-Alaikum CFO Sahab! Aap kaise hain? Main aapki kya madad kar sakta hoon?";
+        } else {
+          greeting = `Hello ${userName || 'User'}! I am FinLedger AI. What can I do for you today?`;
+          urduGreeting = greeting;
+        }
+
+        setConversationState('general');
         setShowTranscript(true);
         setTranscript(greeting);
         toast.info("Assistant: " + greeting);
-        speakResponse(greeting);
-      }, 1500);
+        speakResponse(urduGreeting);
+      }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [location.pathname, conversationState]);
+  }, [userRole, conversationState]);
   // Function to speak back replies
   const speakResponse = (text: string) => {
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // clear previous
+      window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      // 'hi-IN' generally sounds the closest and most natural for Roman Urdu / Hindi
-      utterance.lang = 'hi-IN';
-      utterance.rate = 1;
+
+      // Check for Urdu characters or common keywords to optimize voice
+      const containsUrdu = /[\u0600-\u06FF]/.test(text) || text.includes('hain') || text.includes('hoon') || text.includes('shukriya');
+
+      if (containsUrdu) {
+        utterance.lang = 'hi-IN'; // Best fallback for Urdu pronunciation
+        utterance.pitch = 1.1; // Slightly more human/friendly pitch
+        utterance.rate = 0.9;  // Slightly slower for clarity
+      } else {
+        utterance.lang = 'en-US';
+        utterance.pitch = 1;
+        utterance.rate = 1;
+      }
+
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -156,9 +179,33 @@ export default function VoiceAssistant() {
     const speech = command.toLowerCase();
     let isHandled = false;
 
-    // 1. Intents Identification
+    // 0. Conversational / Human-like responses
+    const isGreeting = speech.includes('kaise ho') || speech.includes('kaise hain') || speech.includes('how are you');
+    const isStatusUpdate = speech.includes('theek hoon') || speech.includes('sahi hoon') || speech.includes('shukriya') || speech.includes('good') || speech.includes('fine');
+    const isPrintIntent = speech.includes('print') || speech.includes('chaapo');
     const isFormIntent = speech.includes('nayi') || speech.includes('naya') || speech.includes('new') || speech.includes('add') || speech.includes('daalo') || speech.includes('dal') || speech.includes('darj') || speech.includes('bharo') || speech.includes('fill') || speech.includes('create') || speech.includes('dalo');
-    const isSearchIntent = speech.includes('search') || speech.includes('filter') || speech.includes('dikhao') || speech.includes('talaash') || speech.includes('dekho') || speech.includes('last') || speech.includes('purani') || speech.includes('pichli');
+    const isSearchIntent = speech.includes('search') || speech.includes('filter') || speech.includes('dikhao') || speech.includes('talaash') || speech.includes('dekho') || speech.includes('last') || speech.includes('purani') || speech.includes('pichli') || speech.includes('tracking');
+
+    // ----------------------------------------------------
+    // PRECEDENCE 0: CONVERSATIONAL
+    // ----------------------------------------------------
+    if (isGreeting) {
+      const reply = "Main bilkul theek hoon, shukriya! Aap batayein main aapki kya madad kar sakta hoon?";
+      setTranscript(reply);
+      speakResponse(reply);
+      isHandled = true;
+    }
+    else if (isStatusUpdate) {
+      const reply = "Bohat acha laga sun kar. Kuch kaam hai to batayein, main hazir hoon.";
+      setTranscript(reply);
+      speakResponse(reply);
+      isHandled = true;
+    }
+    else if (isPrintIntent) {
+      speakResponse("Ji bilkul, main print command bhej raha hoon.");
+      window.print();
+      isHandled = true;
+    }
 
     // ----------------------------------------------------
     // PRECEDENCE 1: FORMS / DATA ENTRY
@@ -312,8 +359,16 @@ export default function VoiceAssistant() {
     else if (speech.includes('bank') || speech.includes('account')) {
       isHandled = true; navigate('/bank-accounts'); speakResponse("Bank Accounts opened."); toast.success("Bank Accounts opened."); stopListening();
     }
-    else if (speech.includes('report') || speech.includes('record')) {
-      isHandled = true; navigate('/reports'); speakResponse("Reports opened."); toast.success("Reports opened."); stopListening();
+    else if (speech.includes('report') || speech.includes('record') || speech.includes('tracking')) {
+      isHandled = true;
+      if (speech.includes('tracking') || speech.includes('file')) {
+        navigate('/book-section/file-tracking');
+        speakResponse("File Tracking reports khul gayi hain.");
+      } else {
+        navigate('/reports');
+        speakResponse("Reports page khul gaya hai.");
+      }
+      toast.success("Reports opened."); stopListening();
     }
     else if (speech.includes('medical') || speech.includes('dawae')) {
       isHandled = true; navigate('/book-section/medical'); speakResponse("Medical page opened."); toast.success("Medical opened."); stopListening();
@@ -385,56 +440,70 @@ export default function VoiceAssistant() {
             <Activity className="w-4 h-4 text-primary" />
             FinLedger Assistant
           </h3>
-          <button
-            onClick={() => setShowTranscript(false)}
-            className="text-muted-foreground hover:text-red-400 transition-colors bg-white/5 rounded-full p-1"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setIsMinimized(!isMinimized)}
+              className="text-muted-foreground hover:text-primary transition-colors bg-white/5 rounded-full p-1"
+              title={isMinimized ? "Maximize" : "Minimize"}
+            >
+              {isMinimized ? <Maximize2 className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+            </button>
+            <button
+              onClick={() => setShowTranscript(false)}
+              className="text-muted-foreground hover:text-red-400 transition-colors bg-white/5 rounded-full p-1"
+              title="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="min-h-[90px] max-h-[150px] overflow-y-auto w-full bg-black/20 p-4 rounded-lg border border-white/5 font-mono text-sm shadow-inner flex flex-col justify-end">
-          <p className="text-foreground/90 font-medium leading-relaxed">
-            {transcript ? (
-              <span className="text-white">
-                <span className="text-primary/70 block mb-1 text-xs">AI:</span>
-                "{transcript}"
-              </span>
-            ) : isListening ? (
-              <span className="text-primary/70 italic flex flex-col gap-1">
-                <span>Listening... Please speak.</span>
-                <span className="text-xs text-muted-foreground/50 mt-1">💡 Try: "Open Dashboard" or type your command</span>
-              </span>
-            ) : (
-              <span className="text-muted-foreground/60 italic">Click the mic below and give your command. Or type here.</span>
-            )}
-          </p>
-        </div>
+        {!isMinimized && (
+          <>
+            <div className="min-h-[90px] max-h-[150px] overflow-y-auto w-full bg-black/20 p-4 rounded-lg border border-white/5 font-mono text-sm shadow-inner flex flex-col justify-end">
+              <p className="text-foreground/90 font-medium leading-relaxed">
+                {transcript ? (
+                  <span className="text-white">
+                    <span className="text-primary/70 block mb-1 text-xs">AI:</span>
+                    "{transcript}"
+                  </span>
+                ) : isListening ? (
+                  <span className="text-primary/70 italic flex flex-col gap-1">
+                    <span>Listening... Please speak.</span>
+                    <span className="text-xs text-muted-foreground/50 mt-1">💡 Try: "Open Dashboard" or type your command</span>
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground/60 italic">Click the mic below and give your command. Or type here.</span>
+                )}
+              </p>
+            </div>
 
-        <div className="mt-3 flex gap-2 items-center">
-          <Input
-            value={textInput}
-            onChange={e => setTextInput(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                handleVoiceCommand(textInput);
-                setTextInput('');
-              }
-            }}
-            placeholder="Type response..."
-            className="h-8 text-xs bg-black/40 border-primary/20 text-white"
-          />
-          <Button
-            size="sm"
-            className="h-8 px-3 font-semibold"
-            onClick={() => {
-              handleVoiceCommand(textInput);
-              setTextInput('');
-            }}
-          >
-            Send
-          </Button>
-        </div>
+            <div className="mt-3 flex gap-2 items-center">
+              <Input
+                value={textInput}
+                onChange={e => setTextInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    handleVoiceCommand(textInput);
+                    setTextInput('');
+                  }
+                }}
+                placeholder="Type response..."
+                className="h-8 text-xs bg-black/40 border-primary/20 text-white"
+              />
+              <Button
+                size="sm"
+                className="h-8 px-3 font-semibold"
+                onClick={() => {
+                  handleVoiceCommand(textInput);
+                  setTextInput('');
+                }}
+              >
+                Send
+              </Button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Floating Microphone Button */}

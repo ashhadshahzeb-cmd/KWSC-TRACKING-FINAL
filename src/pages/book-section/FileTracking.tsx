@@ -29,16 +29,19 @@ import {
   Bell,
   ArrowDownCircle,
   ArrowUpCircle,
+  ArrowLeft,
   Users,
   Inbox,
   LayoutDashboard,
-  Plus
+  Plus,
+  ShieldCheck
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/mock-data";
+import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -55,12 +58,32 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function FileTracking() {
   const location = useLocation();
+  const navigate = useNavigate();
   const printRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("register");
+
+  // Filters & Pagination
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [trayPage, setTrayPage] = useState(1);
+  const [searchPage, setSearchPage] = useState(1);
+  const ITEMS_PER_PAGE = 50;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedBill, setSelectedBill] = useState<any>(null);
+
+  // Auth-based role detection
+  const { userRole, userName, signOut, isAdmin } = useAuth();
+  const currentRole = userRole || 'cfo';
+  const [viewingRole, setViewingRole] = useState(currentRole);
+
+  useEffect(() => {
+    // Sub-CFO behaves as a department user for the CFO section
+    setViewingRole(currentRole === 'sub_cfo' ? 'cfo' : currentRole);
+  }, [currentRole]);
+
+  const isCFORole = currentRole === 'cfo' || currentRole === 'sub_cfo' || isAdmin;
 
   // New Form State
   const [isSavingForm, setIsSavingForm] = useState(false);
@@ -79,8 +102,111 @@ export default function FileTracking() {
     remarks: "",
   });
 
-  const [currentRole, setCurrentRole] = useState("cfo"); // Simulation: 'cfo', 'medical', 'contractor', etc.
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [reportDateFilter, setReportDateFilter] = useState("all");
+
+  // Helper for CSV Export
+  const exportToCSV = (data: any[], filename: string) => {
+    if (data.length === 0) return;
+    const headers = ["Diary No", "Ref No", "Subject", "Main Category", "Sub Category", "From", "Mark To", "Date", "Remarks"];
+    const rows = data.map(r => [
+      r.cfo_diary_number,
+      r.receiving_number,
+      r.subject,
+      r.mainCategory,
+      r.subCategory,
+      r.received_from,
+      r.mark_to,
+      new Date(r.created_at).toLocaleDateString(),
+      r.remarks?.replace(/,/g, " ") || ""
+    ]);
+
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${filename}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Helper for Professional PDF Export (Print-based)
+  const handlePrintFullReport = (data: any[]) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const reportRows = data.map((r, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td><strong>${r.cfo_diary_number}</strong></td>
+        <td>${r.receiving_number}</td>
+        <td>${r.subject}</td>
+        <td>${r.mainCategory.toUpperCase()}</td>
+        <td>${r.received_from}</td>
+        <td>${sections.find(s => s.id === r.mark_to)?.name || r.mark_to}</td>
+        <td>${new Date(r.created_at).toLocaleDateString()}</td>
+      </tr>
+    `).join("");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>KWSC - Finance Tracking Report</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; }
+            .report-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo { font-size: 24px; font-weight: bold; color: #1e40af; margin-bottom: 5px; }
+            .report-title { font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
+            .meta { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; color: #666; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 11px; }
+            th { background-color: #f8fafc !important; font-weight: bold; text-transform: uppercase; color: #1e40af; }
+            tr:nth-child(even) { background-color: #fdfdfd; }
+            .signature-section { margin-top: 60px; display: flex; justify-content: space-between; }
+            .sig-box { border-top: 1px solid #000; width: 200px; text-align: center; padding-top: 5px; font-size: 12px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="report-header">
+            <div class="logo">KARACHI WATER & SEWERAGE CORPORATION</div>
+            <div class="report-title">Finance Department - File Movement Tracking Report</div>
+          </div>
+          <div class="meta">
+            <span>Generated By: <strong>${userName || currentRole.toUpperCase()}</strong></span>
+            <span>Date: ${new Date().toLocaleString()}</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>S#</th>
+                <th>Diary No</th>
+                <th>Ref No</th>
+                <th>Subject</th>
+                <th>Category</th>
+                <th>From</th>
+                <th>Current Status</th>
+                <th>Reg. Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${reportRows}
+            </tbody>
+          </table>
+          <div class="signature-section">
+            <div class="sig-box">Section Head Signature</div>
+            <div class="sig-box">CFO / Administrator</div>
+          </div>
+          <script>
+            window.onload = function() { window.print(); window.close(); };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   // Comprehensive Dummy Data Set for Testing (15+ entries per section)
   const [records, setRecords] = useState<any[]>([
@@ -306,13 +432,13 @@ export default function FileTracking() {
 
   const categoryOptions: Record<string, string[]> = {
     employee: ["Medical", "Pension", "Salary / Arrears", "Loans / Advances", "Others"],
-    contractor: ["Running Bill", "Final Bill", "Security Deposit", "Retention Money", "Others"],
+    contractor: ["Security Deposit", "Contingencies", "POL Bills", "Others"],
     others: ["POL Bills", "Contingencies", "Legal", "General / Miscellaneous"]
   };
 
   const handleFormReset = () => {
     setFormData({
-      cfo_diary_number: "",
+      cfo_diary_number: `CFO-${new Date().getFullYear()}-${String(Math.floor(1 + Math.random() * 9999)).padStart(4, '0')}`,
       inward_date: new Date().toISOString().split('T')[0],
       received_from: "",
       receiving_number: `RC-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -334,19 +460,9 @@ export default function FileTracking() {
     setIsSavingForm(true);
     try {
       const existingRecordIndex = records.findIndex(r => r.receiving_number === formData.receiving_number);
-      const trackingId = `FT-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
-      const newEntry = {
-        tracking_id: trackingId,
-        ...formData,
-      };
 
-      const { error } = await supabase.from('file_tracking_records' as any).insert(newEntry);
+      let dbError = null;
 
-      if (error) {
-        console.warn("Table file_tracking_records not found, updating local records state.");
-      }
-
-      // Update local state for simulation with full data snapshot
       const snapshot = {
         ...formData,
         date: new Date().toISOString(),
@@ -356,29 +472,78 @@ export default function FileTracking() {
 
       if (existingRecordIndex !== -1) {
         // Appending to existing file history
+        const existingRecord = records[existingRecordIndex];
+        const newHistory = [...(existingRecord.history || []), snapshot];
+
+        const { error } = await supabase
+          .from('file_tracking_records' as any)
+          .update({
+            mark_to: formData.mark_to,
+            remarks: formData.remarks,
+            history: newHistory
+          })
+          .eq('receiving_number', formData.receiving_number);
+
+        dbError = error;
+
+        // Update local state
         const updatedRecords = [...records];
         updatedRecords[existingRecordIndex] = {
-          ...updatedRecords[existingRecordIndex],
+          ...existingRecord,
           mark_to: formData.mark_to,
           remarks: formData.remarks,
-          history: [
-            ...updatedRecords[existingRecordIndex].history,
-            snapshot
-          ]
+          history: newHistory
         };
         setRecords(updatedRecords);
-        toast.success(`Detailed log entry added and file forwarded to ${formData.mark_to}`);
+        if (error) {
+          toast.error(`Database Error: ${error.message || JSON.stringify(error)}`);
+        } else {
+          toast.success(`Detailed log entry added and file forwarded to ${formData.mark_to}`);
+        }
       } else {
         // Creating fresh record
+        const trackingId = `FT-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+        const newEntry = {
+          tracking_id: trackingId,
+          cfo_diary_number: formData.cfo_diary_number,
+          inward_date: formData.inward_date,
+          received_from: formData.received_from,
+          receiving_number: formData.receiving_number,
+          main_category: formData.mainCategory,
+          sub_category: formData.subCategory,
+          subject: formData.subject,
+          date_of_sign: formData.date_of_sign,
+          signature_data: formData.signature_data,
+          mark_to: formData.mark_to,
+          outward_date: formData.outward_date,
+          remarks: formData.remarks,
+          history: [snapshot],
+          created_at: new Date().toISOString()
+        };
+
+        const { error } = await supabase.from('file_tracking_records' as any).insert(newEntry);
+        dbError = error;
+
+        // Local state
         const fullEntry = {
           ...newEntry,
+          mainCategory: formData.mainCategory, // for local UI compatibility
+          subCategory: formData.subCategory, // for local UI compatibility
           id: Math.random().toString(36).substr(2, 9),
-          created_at: new Date().toISOString(),
-          history: [snapshot]
         };
         setRecords([fullEntry, ...records]);
-        toast.success(`File registered and initial audit log created`);
+        if (error) {
+          toast.error(`Database Error: ${error.message || JSON.stringify(error)}`);
+        } else {
+          toast.success(`File registered and initial audit log created`);
+        }
       }
+
+      if (dbError) {
+        console.warn("Table file_tracking_records sync issue:", dbError);
+      }
+
+      setQrFullScreen({ diary: formData.cfo_diary_number, receiving: formData.receiving_number });
 
       handleFormReset();
     } catch (err) {
@@ -388,6 +553,75 @@ export default function FileTracking() {
       setIsSavingForm(false);
     }
   };
+
+  const [isPrintingQR, setIsPrintingQR] = useState(false);
+
+  const handlePrintQR = () => {
+    setIsPrintingQR(true);
+    document.body.classList.add('printing-qr-ticket');
+    setTimeout(() => {
+      window.print();
+      document.body.classList.remove('printing-qr-ticket');
+      setIsPrintingQR(false);
+    }, 250);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      const target = e.target as HTMLElement;
+      if (target.tagName.toLowerCase() === 'button') return; // Let buttons act naturally
+
+      e.preventDefault();
+      const formContainer = document.getElementById('registration-form-container');
+      if (!formContainer) return;
+
+      const focusableElements = Array.from(
+        formContainer.querySelectorAll('input:not([readonly]):not([disabled]), button[role="combobox"]:not([disabled]), textarea:not([disabled])')
+      );
+
+      const index = focusableElements.indexOf(target);
+      if (index > -1 && index < focusableElements.length - 1) {
+        (focusableElements[index + 1] as HTMLElement).focus();
+      }
+    }
+  };
+
+  useEffect(() => {
+    setTrayPage(1);
+    setSearchPage(1);
+  }, [filterCategory, sortOrder, searchQuery, activeTab]);
+
+  const fetchRecords = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('file_tracking_records' as any)
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.warn("Could not fetch remote records, using mock data", error);
+        return;
+      }
+      if (data && data.length > 0) {
+        setRecords(prev => {
+          const dbIds = new Set(data.map(d => d.tracking_id));
+          const mockFiltered = prev.filter(p => !dbIds.has(p.tracking_id));
+          const mappedData = data.map(d => ({
+            ...d,
+            mainCategory: d.main_category,
+            subCategory: d.sub_category
+          }));
+          return [...mappedData, ...mockFiltered];
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecords();
+  }, []);
 
   useEffect(() => {
     // If navigated from BillDispatch with a bill in state
@@ -400,16 +634,16 @@ export default function FileTracking() {
   const handleSearch = async () => {
     // If empty, we show all in the list anyway
     if (!searchQuery) {
-       setSelectedBill(null);
-       return;
+      setSelectedBill(null);
+      return;
     }
 
     setLoading(true);
     try {
       // 1. Check local records first (Simulation data) - Priority for exact match
-      const localMatch = records.find(r => 
-        r.tracking_id?.toLowerCase() === searchQuery.toLowerCase() || 
-        r.cfo_diary_number?.toLowerCase() === searchQuery.toLowerCase() || 
+      const localMatch = viewableRecords.find(r =>
+        r.tracking_id?.toLowerCase() === searchQuery.toLowerCase() ||
+        r.cfo_diary_number?.toLowerCase() === searchQuery.toLowerCase() ||
         r.receiving_number?.toLowerCase() === searchQuery.toLowerCase()
       );
 
@@ -424,7 +658,7 @@ export default function FileTracking() {
         setLoading(false);
         return;
       }
-      
+
       // Clear selected if not found exactly, to allow filtered list to show
       setSelectedBill(null);
 
@@ -449,11 +683,28 @@ export default function FileTracking() {
     { id: 'internal_audit_1', name: 'INTERNAL AUDIT-1' },
     { id: 'director_account', name: 'DIRECTOR ACCOUNT' },
     { id: 'director_finance', name: 'DIRECTOR FINANCE' },
-    { id: 'director_it', name: 'DIRECTOR IT' }
+    { id: 'director_it', name: 'DIRECTOR IT' },
+    { id: 'sub_cfo', name: 'ASST. CFO' }
   ];
 
-  // Logic to filter incoming files for the current role
-  const incomingFiles = records.filter(r => r.mark_to === currentRole);
+  // Logic to filter viewable files based on the viewing role
+  // If CFO/Admin views another department, they see exactly what that department would see
+  // SUB_CFO acts as a restricted section user but for the 'cfo' section
+  const effectiveViewingRole = viewingRole === 'sub_cfo' ? 'cfo' : viewingRole;
+
+  const viewableRecords = (currentRole === 'cfo' || isAdmin)
+    ? records
+    : records.filter(r =>
+      r.mark_to === effectiveViewingRole ||
+      r.processed_by?.toLowerCase() === effectiveViewingRole ||
+      r.history?.some((h: any) => h.processed_by?.toLowerCase().includes(effectiveViewingRole))
+    );
+
+  // Show files in Tray/Timeline based on the viewingRole
+  const incomingFiles = viewableRecords.filter(r =>
+    r.mark_to === effectiveViewingRole ||
+    r.history?.some((h: any) => h.processed_by?.toLowerCase().includes(effectiveViewingRole))
+  );
 
   const handleProcessFile = (file: any) => {
     // Prepare form for the selected department to contribute their part
@@ -477,7 +728,7 @@ export default function FileTracking() {
     setQrFullScreen({ diary, receiving });
   };
 
-  const filteredSearchResults = records.filter(r => {
+  const filteredSearchResults = viewableRecords.filter(r => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -488,6 +739,24 @@ export default function FileTracking() {
       r.received_from?.toLowerCase().includes(q)
     );
   });
+
+  const processRecordsList = (list: any[]) => {
+    return list
+      .filter(r => filterCategory === 'all' || r.mainCategory === filterCategory)
+      .sort((a, b) => {
+        const dateA = new Date(a.created_at || a.inward_date || Date.now()).getTime();
+        const dateB = new Date(b.created_at || b.inward_date || Date.now()).getTime();
+        return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+      });
+  };
+
+  const processedIncomingFiles = processRecordsList(incomingFiles);
+  const paginatedIncomingFiles = processedIncomingFiles.slice((trayPage - 1) * ITEMS_PER_PAGE, trayPage * ITEMS_PER_PAGE);
+  const totalTrayPages = Math.ceil(processedIncomingFiles.length / ITEMS_PER_PAGE) || 1;
+
+  const processedSearchResults = processRecordsList(filteredSearchResults);
+  const paginatedSearchFiles = processedSearchResults.slice((searchPage - 1) * ITEMS_PER_PAGE, searchPage * ITEMS_PER_PAGE);
+  const totalSearchPages = Math.ceil(processedSearchResults.length / ITEMS_PER_PAGE) || 1;
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
@@ -501,21 +770,35 @@ export default function FileTracking() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="text-right hidden md:block">
-            <p className="text-[10px] font-bold uppercase text-muted-foreground">Current Active Section</p>
-            <p className="text-sm font-bold text-primary">{sections.find(s => s.id === currentRole)?.name}</p>
+          {/* Logged-in user section badge - Enhanced with CFO switching capability */}
+          <div className="flex items-center gap-2 bg-background/80 border border-primary/20 rounded-xl px-4 py-2.5">
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+              <Users className="w-4 h-4 text-primary" />
+            </div>
+            <div className="text-right min-w-[120px]">
+              <p className="text-[9px] font-bold uppercase text-muted-foreground tracking-widest">
+                {currentRole === 'cfo' ? 'Viewing Dept' : 'Logged In As'}
+              </p>
+              {currentRole === 'cfo' ? (
+                <Select value={viewingRole} onValueChange={setViewingRole}>
+                  <SelectTrigger className="h-5 p-0 border-none bg-transparent shadow-none focus:ring-0 text-sm font-black text-primary hover:text-primary/80 transition-all italic">
+                    <SelectValue>
+                      {sections.find(s => s.id === viewingRole)?.name || 'CFO'}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="bg-background/95 backdrop-blur-xl border-primary/20 z-[100]">
+                    {sections.map((s) => (
+                      <SelectItem key={s.id} value={s.id} className="text-xs font-bold uppercase tracking-tight">
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm font-black text-primary">{userName || sections.find(s => s.id === currentRole)?.name}</p>
+              )}
+            </div>
           </div>
-          <Select value={currentRole} onValueChange={setCurrentRole}>
-            <SelectTrigger className="w-[200px] bg-background border-primary/20 font-bold">
-              <Users className="w-4 h-4 mr-2 text-primary" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {sections.map(s => (
-                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
           <Dialog>
             <DialogTrigger asChild>
@@ -533,14 +816,14 @@ export default function FileTracking() {
                 <DialogDescription>FILES PENDING YOUR REVIEW AND SIGNATURE</DialogDescription>
               </DialogHeader>
               <ScrollArea className="h-[300px] mt-4">
-                {incomingFiles.length === 0 ? (
+                {processedIncomingFiles.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                     <Check className="w-10 h-10 opacity-20" />
                     <p className="text-sm">No new files for your section</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {incomingFiles.map((file, i) => (
+                    {processedIncomingFiles.map((file, i) => (
                       <div key={i} className="p-3 rounded-lg border border-border bg-muted/30 hover:bg-primary/5 cursor-pointer transition-colors" onClick={() => handleProcessFile(file)}>
                         <div className="flex justify-between items-start">
                           <h4 className="font-bold text-sm">{file.subject}</h4>
@@ -555,23 +838,67 @@ export default function FileTracking() {
               </ScrollArea>
             </DialogContent>
           </Dialog>
+
+          {/* Sign Out Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-red-500/20 hover:bg-red-500/10 hover:text-red-400 text-muted-foreground text-xs font-bold"
+            onClick={async () => {
+              await signOut();
+              navigate('/login');
+            }}
+          >
+            <ArrowUpCircle className="w-4 h-4" />
+            Sign Out
+          </Button>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="flex justify-between items-center mb-6 border-b border-border/50 pb-4">
-          <TabsList className="grid w-[600px] grid-cols-3 bg-muted/50 p-1 border border-border/50">
-            <TabsTrigger value="register" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white gap-2">
-              <Plus className="w-4 h-4" /> New Registration
+        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6 border-b border-border/50 pb-4">
+          <TabsList className="grid w-full md:w-[850px] grid-cols-5 bg-muted/50 p-1 border border-border/50 shrink-0">
+            <TabsTrigger value="register" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white gap-2 text-[11px] px-1">
+              <Plus className="w-4 h-4" /> Registration
             </TabsTrigger>
-            <TabsTrigger value="tray" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white gap-2 relative">
+            <TabsTrigger value="tray" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white gap-2 relative text-[11px] px-1">
               <Inbox className="w-4 h-4" /> My Tray
               {incomingFiles.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] flex items-center justify-center">{incomingFiles.length}</span>}
             </TabsTrigger>
-            <TabsTrigger value="track" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white gap-2">
-              <Search className="w-4 h-4" /> Global Search
+            <TabsTrigger value="timeline" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white gap-2 text-[11px] px-1">
+              <History className="w-4 h-4" /> Timeline
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white gap-2 text-[11px] px-1">
+              <FileSearch className="w-4 h-4" /> Tracking Reports
+            </TabsTrigger>
+            <TabsTrigger value="track" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white gap-2 text-[11px] px-1">
+              <Search className="w-4 h-4" /> Search
             </TabsTrigger>
           </TabsList>
+
+          <div className="flex items-center gap-2">
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="w-[140px] h-9 text-xs bg-muted/20 border-border/50 text-foreground">
+                <SelectValue placeholder="Category View" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="employee">Employee</SelectItem>
+                <SelectItem value="contractor">Contractor</SelectItem>
+                <SelectItem value="others">Others/General</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sortOrder} onValueChange={(v: "desc" | "asc") => setSortOrder(v)}>
+              <SelectTrigger className="w-[140px] h-9 text-xs bg-muted/20 border-border/50 text-foreground">
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="desc">Newest First</SelectItem>
+                <SelectItem value="asc">Oldest First</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <TabsContent value="tray" className="animate-fade-in">
@@ -586,66 +913,328 @@ export default function FileTracking() {
               </div>
             </CardHeader>
             <CardContent>
-              {incomingFiles.length === 0 ? (
+              {paginatedIncomingFiles.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-muted/5 rounded-xl border-2 border-dashed border-border/50">
                   <Inbox className="w-16 h-16 opacity-10 mb-4" />
                   <h3 className="text-lg font-bold">Your Tray is Empty</h3>
-                  <p className="text-sm">New files marked for your section will appear here.</p>
+                  <p className="text-sm">No files found for your section matching current filters.</p>
                 </div>
               ) : (
-                <div className="rounded-md border border-border/50 overflow-hidden">
-                  <Table>
-                    <TableHeader className="bg-muted/50">
-                      <TableRow>
-                        <TableHead className="text-xs uppercase font-bold">Diary/Ref No</TableHead>
-                        <TableHead className="text-xs uppercase font-bold text-center">Track QR</TableHead>
-                        <TableHead className="text-xs uppercase font-bold">Subject</TableHead>
-                        <TableHead className="text-xs uppercase font-bold">Category</TableHead>
-                        <TableHead className="text-xs uppercase font-bold">From</TableHead>
-                        <TableHead className="text-xs uppercase font-bold">Date Marked</TableHead>
-                        <TableHead className="text-xs uppercase font-bold text-center">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {incomingFiles.map((file, i) => (
-                        <TableRow key={i} className="hover:bg-primary/5 transition-colors group">
-                          <TableCell className="font-mono text-xs font-bold text-primary">{file.receiving_number}</TableCell>
-                          <TableCell className="text-center">
-                            {file.cfo_diary_number && (
-                              <div 
-                                className="cursor-zoom-in group/qr transition-transform hover:scale-110"
-                                onClick={() => handleQRClick(file.cfo_diary_number, file.receiving_number)}
-                              >
-                                <img 
-                                  src={`https://api.qrserver.com/v1/create-qr-code/?size=35x35&data=${encodeURIComponent(`${window.location.origin}/public-track/${file.cfo_diary_number}/${file.receiving_number}`)}`} 
-                                  alt="QR"
-                                  className="w-8 h-8 mx-auto opacity-70 group-hover:opacity-100 transition-opacity rounded border border-border bg-white"
-                                />
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell className="font-semibold text-sm">{file.subject}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="text-[10px] uppercase">{file.mainCategory}</Badge>
-                          </TableCell>
-                          <TableCell className="text-xs">{file.received_from}</TableCell>
-                          <TableCell className="text-xs">{new Date(file.created_at).toLocaleDateString()}</TableCell>
-                          <TableCell className="text-center">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 gap-2 border-primary/20 hover:bg-primary hover:text-white transition-all"
-                              onClick={() => handleProcessFile(file)}
-                            >
-                              Review & Sign <ArrowRight className="w-3 h-3" />
-                            </Button>
-                          </TableCell>
+                <div className="space-y-4">
+                  <div className="rounded-md border border-border/50 overflow-hidden">
+                    <Table>
+                      <TableHeader className="bg-muted/50">
+                        <TableRow>
+                          <TableHead className="text-xs uppercase font-bold">Diary/Ref No</TableHead>
+                          <TableHead className="text-xs uppercase font-bold text-center">Track QR</TableHead>
+                          <TableHead className="text-xs uppercase font-bold">Subject</TableHead>
+                          <TableHead className="text-xs uppercase font-bold">Category</TableHead>
+                          <TableHead className="text-xs uppercase font-bold">From</TableHead>
+                          <TableHead className="text-xs uppercase font-bold">Date Marked</TableHead>
+                          <TableHead className="text-xs uppercase font-bold text-center">Action</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedIncomingFiles.map((file, i) => (
+                          <TableRow key={i} className="hover:bg-primary/5 transition-colors group">
+                            <TableCell className="font-mono text-xs font-bold text-primary">{file.receiving_number}</TableCell>
+                            <TableCell className="text-center">
+                              {file.cfo_diary_number && (
+                                <div
+                                  className="cursor-zoom-in group/qr transition-transform hover:scale-110"
+                                  onClick={() => handleQRClick(file.cfo_diary_number, file.receiving_number)}
+                                >
+                                  <img
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=35x35&data=${encodeURIComponent(`${window.location.origin}/public-track/${file.cfo_diary_number}/${file.receiving_number}`)}&color=0ea5e9`}
+                                    alt="QR"
+                                    className="w-8 h-8 mx-auto opacity-70 group-hover:opacity-100 transition-opacity rounded border border-border bg-white"
+                                  />
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="font-semibold text-sm">{file.subject}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-[10px] uppercase">{file.mainCategory}</Badge>
+                            </TableCell>
+                            <TableCell className="text-xs">{file.received_from}</TableCell>
+                            <TableCell className="text-xs">{new Date(file.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell className="text-center">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 gap-2 border-primary/20 hover:bg-primary hover:text-white transition-all"
+                                onClick={() => handleProcessFile(file)}
+                              >
+                                Review & Sign <ArrowRight className="w-3 h-3" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Tray Pagination */}
+                  {totalTrayPages > 1 && (
+                    <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                      <span className="text-xs text-muted-foreground font-bold">Showing page {trayPage} of {totalTrayPages}</span>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setTrayPage(p => Math.max(1, p - 1))} disabled={trayPage === 1}>Previous</Button>
+                        <Button variant="outline" size="sm" onClick={() => setTrayPage(p => Math.min(totalTrayPages, p + 1))} disabled={trayPage === totalTrayPages}>Next</Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="reports" className="animate-fade-in">
+          <Card className="glass-card border-none shadow-xl">
+            <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <CardTitle className="text-xl font-bold flex items-center gap-2">
+                  <FileText className="w-6 h-6 text-primary" />
+                  File Tracking Insights & Reports
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">Exportable summaries for audits and status monitoring</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={reportDateFilter} onValueChange={setReportDateFilter}>
+                  <SelectTrigger className="w-[150px] h-9 bg-muted/20 border-border/50 text-xs">
+                    <SelectValue placeholder="Date Range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time Records</SelectItem>
+                    <SelectItem value="daily">Daily Report</SelectItem>
+                    <SelectItem value="weekly">Weekly Summary</SelectItem>
+                    <SelectItem value="monthly">Monthly Audit</SelectItem>
+                    <SelectItem value="yearly">Yearly Overview</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={() => handlePrintFullReport(viewableRecords)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs gap-2"
+                >
+                  <Printer className="w-4 h-4" /> Bulk PDF Export
+                </Button>
+                <Button
+                  onClick={() => exportToCSV(viewableRecords, `KWSC_Full_Report_${new Date().toISOString().split('T')[0]}`)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-2"
+                >
+                  <Upload className="w-4 h-4 rotate-180" /> Bulk CSV Export
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-xl border border-border/50 overflow-hidden bg-background/40">
+                <Table>
+                  <TableHeader className="bg-muted/50 text-[10px] uppercase font-black tracking-tighter">
+                    <TableRow>
+                      <TableHead>Diary #</TableHead>
+                      <TableHead>Ref/Sub</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>From & Mark To</TableHead>
+                      <TableHead>Created At</TableHead>
+                      <TableHead className="text-right pr-6">Export</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {processedIncomingFiles.filter(r => {
+                      const date = new Date(r.created_at);
+                      const now = new Date();
+                      if (reportDateFilter === 'daily') return date.toDateString() === now.toDateString();
+                      if (reportDateFilter === 'weekly') return (now.getTime() - date.getTime()) < 7 * 24 * 60 * 60 * 1000;
+                      if (reportDateFilter === 'monthly') return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+                      if (reportDateFilter === 'yearly') return date.getFullYear() === now.getFullYear();
+                      return true;
+                    }).map((file, i) => (
+                      <TableRow key={i} className="hover:bg-primary/5 border-border/30 transition-colors">
+                        <TableCell className="font-mono text-[10px] font-bold text-primary">{file.cfo_diary_number}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-xs">{file.subject}</span>
+                            <span className="text-[10px] text-muted-foreground italic">{file.receiving_number}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-[9px] uppercase border-primary/20">{file.mainCategory}</Badge>
+                        </TableCell>
+                        <TableCell className="text-[10px]">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-muted-foreground">F: {file.received_from}</span>
+                            <span className="text-emerald-500 font-bold">M: {sections.find(s => s.id === file.mark_to)?.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-[10px] font-mono text-muted-foreground">
+                          {new Date(file.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right pr-6">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:text-emerald-500"
+                              onClick={() => exportToCSV([file], `Report_${file.receiving_number}`)}
+                            >
+                              <Upload className="w-3.5 h-3.5 rotate-180" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:text-red-400"
+                              onClick={() => handlePrintFullReport([file])}
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:text-blue-500"
+                              onClick={() => handleQRClick(file.cfo_diary_number, file.receiving_number)}
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="timeline" className="animate-fade-in">
+          <Card className="glass-card border-none shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-xl font-bold flex items-center gap-2">
+                <History className="w-6 h-6 text-primary" />
+                Department Activity Timeline
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">Detailed trail of all files processed or forwarded by your section</p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {paginatedIncomingFiles.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-muted/5 rounded-xl border-2 border-dashed border-border/50">
+                    <History className="w-16 h-16 opacity-10 mb-4" />
+                    <h3 className="text-lg font-bold">No Timeline Data</h3>
+                    <p className="text-sm">You haven't interacted with any files yet.</p>
+                  </div>
+                ) : (
+                  paginatedIncomingFiles.map((file, i) => (
+                    <Dialog key={i}>
+                      <DialogTrigger asChild>
+                        <div className="bg-muted/10 border border-border/50 rounded-xl p-6 cursor-pointer hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5 group relative overflow-hidden">
+                          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 gap-1 text-[10px]">
+                              <FileSearch className="w-3 h-3" /> Click to Preview
+                            </Badge>
+                          </div>
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-border/50 pb-4">
+                            <div>
+                              <h4 className="font-bold text-base text-primary group-hover:underline">{file.subject}</h4>
+                              <span className="inline-block mt-2 text-[10px] uppercase font-bold text-muted-foreground tracking-widest bg-muted/30 px-2 py-0.5 rounded-full">
+                                DIARY NO: {file.cfo_diary_number} | REF: {file.receiving_number}
+                              </span>
+                            </div>
+                            <Badge variant={file.mark_to === currentRole ? 'default' : 'secondary'} className="uppercase">
+                              Current Desk: {sections.find(s => s.id === file.mark_to)?.name || file.mark_to}
+                            </Badge>
+                          </div>
+
+                          <div className="space-y-0 relative border-l-2 border-primary/20 ml-3">
+                            {file.history?.map((step: any, idx: number) => (
+                              <div key={idx} className="relative pb-6 pl-6 last:pb-0">
+                                <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                </div>
+                                <div className="bg-background rounded-lg border border-border p-3 shadow-sm group-hover:border-primary/30 transition-colors">
+                                  <div className="flex flex-wrap items-center justify-between gap-4 text-sm font-bold mb-1">
+                                    <span className="text-primary flex items-center gap-1"><User className="w-3 h-3" /> {step.processed_by || 'Unknown Section'}</span>
+                                    <span className="text-[10px] font-mono text-muted-foreground bg-muted/30 px-2 py-0.5 rounded">
+                                      {new Date(step.date).toLocaleString()}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <Badge variant="outline" className="text-[9px] uppercase border-primary/20 text-primary">{step.action || 'PROCESSED'}</Badge>
+                                    {step.mark_to && <span className="text-xs text-muted-foreground">&rarr; Forwarded to <strong className="text-foreground">{sections.find(s => s.id === step.mark_to)?.name || step.mark_to}</strong></span>}
+                                  </div>
+                                  {step.remarks && (
+                                    <p className="text-xs text-muted-foreground mt-2 italic bg-muted/20 p-2 rounded border border-border/30">"{step.remarks}"</p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl bg-background/95 backdrop-blur-xl border-border/50">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2 text-xl text-primary">
+                            <FileText className="w-5 h-5" />
+                            File Data Preview
+                          </DialogTitle>
+                          <DialogDescription>Overview for Ref No: {file.receiving_number}</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid grid-cols-2 gap-3 mt-4">
+                          <div className="bg-muted/10 p-3 rounded-lg border border-border/50 col-span-2">
+                            <p className="text-[10px] text-muted-foreground font-bold uppercase">Subject</p>
+                            <p className="text-sm font-semibold text-primary">{file.subject}</p>
+                          </div>
+                          <div className="bg-muted/10 p-3 rounded-lg border border-border/50">
+                            <p className="text-[10px] text-muted-foreground font-bold uppercase">CFO Diary No</p>
+                            <p className="text-sm font-bold">{file.cfo_diary_number || 'N/A'}</p>
+                          </div>
+                          <div className="bg-muted/10 p-3 rounded-lg border border-border/50">
+                            <p className="text-[10px] text-muted-foreground font-bold uppercase">Received From</p>
+                            <p className="text-sm font-semibold">{file.received_from}</p>
+                          </div>
+                          <div className="bg-muted/10 p-3 rounded-lg border border-border/50">
+                            <p className="text-[10px] text-muted-foreground font-bold uppercase">Category Structure</p>
+                            <p className="text-sm font-semibold uppercase">{file.mainCategory} &rarr; {file.subCategory?.replace(/_/g, " ")}</p>
+                          </div>
+                          <div className="bg-muted/10 p-3 rounded-lg border border-border/50">
+                            <p className="text-[10px] text-muted-foreground font-bold uppercase">Registration Date</p>
+                            <p className="text-sm font-semibold">{new Date(file.inward_date).toLocaleDateString()}</p>
+                          </div>
+                          <div className="bg-muted/10 p-3 rounded-lg border border-border/50">
+                            <p className="text-[10px] text-muted-foreground font-bold uppercase">Current Mark To</p>
+                            <p className="text-sm font-semibold uppercase">{sections.find(s => s.id === file.mark_to)?.name || file.mark_to}</p>
+                          </div>
+                          <div className="bg-muted/10 p-3 rounded-lg border border-border/50">
+                            <p className="text-[10px] text-muted-foreground font-bold uppercase">Outward Date</p>
+                            <p className="text-sm font-semibold text-emerald-500">{file.outward_date ? new Date(file.outward_date).toLocaleDateString() : 'N/A'}</p>
+                          </div>
+                          {file.remarks && (
+                            <div className="bg-muted/10 p-3 rounded-lg border border-border/50 col-span-2 text-amber-500">
+                              <p className="text-[10px] text-muted-foreground font-bold uppercase text-amber-500/70">Latest Remarks</p>
+                              <p className="text-sm font-semibold italic">"{file.remarks}"</p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-4 flex justify-end">
+                          <Button variant="outline" className="border-primary/20 hover:bg-primary/10" onClick={() => handleQRClick(file.cfo_diary_number, file.receiving_number)}>
+                            <Printer className="w-4 h-4 mr-2" /> View Printable Slip
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  ))
+                )}
+                {totalTrayPages > 1 && (
+                  <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                    <span className="text-xs text-muted-foreground font-bold">Showing page {trayPage} of {totalTrayPages}</span>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setTrayPage(p => Math.max(1, p - 1))} disabled={trayPage === 1}>Previous</Button>
+                      <Button variant="outline" size="sm" onClick={() => setTrayPage(p => Math.min(totalTrayPages, p + 1))} disabled={trayPage === totalTrayPages}>Next</Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -677,28 +1266,28 @@ export default function FileTracking() {
                 {selectedBill && (
                   <div className="pt-4 border-t border-border/50 space-y-4 animate-fade-in">
                     <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
-                       <div className="flex justify-between items-start">
-                         <div>
-                           <p className="text-[10px] font-bold text-primary uppercase">Current Status</p>
-                           <h3 className="text-xl font-bold flex items-center gap-2 mt-1">
-                             <Building2 className="w-5 h-5 text-primary" />
-                             {selectedBill.mark_to ? sections.find(s => s.id === selectedBill.mark_to)?.name : "Registered"}
-                           </h3>
-                           <div className="mt-2 text-[10px] font-bold uppercase px-2 py-0.5 bg-primary/10 text-primary w-fit rounded">
-                              {selectedBill.current_status || "Processing"}
-                           </div>
-                         </div>
-                         <div 
-                           className="bg-white p-1 rounded-lg border border-primary/20 shadow-sm cursor-zoom-in hover:scale-110 transition-transform"
-                           onClick={() => handleQRClick(selectedBill.cfo_diary_number || selectedBill.diary_no, selectedBill.receiving_number || selectedBill.tracking_id)}
-                         >
-                           <img 
-                             src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(`${window.location.origin}/public-track/${selectedBill.cfo_diary_number || selectedBill.diary_no}/${selectedBill.receiving_number || selectedBill.tracking_id}`)}`} 
-                             alt="QR"
-                             className="w-12 h-12"
-                           />
-                         </div>
-                       </div>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-[10px] font-bold text-primary uppercase">Current Status</p>
+                          <h3 className="text-xl font-bold flex items-center gap-2 mt-1">
+                            <Building2 className="w-5 h-5 text-primary" />
+                            {selectedBill.mark_to ? sections.find(s => s.id === selectedBill.mark_to)?.name : "Registered"}
+                          </h3>
+                          <div className="mt-2 text-[10px] font-bold uppercase px-2 py-0.5 bg-primary/10 text-primary w-fit rounded">
+                            {selectedBill.current_status || "Processing"}
+                          </div>
+                        </div>
+                        <div
+                          className="bg-white p-1 rounded-lg border border-primary/20 shadow-sm cursor-zoom-in hover:scale-110 transition-transform"
+                          onClick={() => handleQRClick(selectedBill.cfo_diary_number || selectedBill.diary_no, selectedBill.receiving_number || selectedBill.tracking_id)}
+                        >
+                          <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(`${window.location.origin}/public-track/${selectedBill.cfo_diary_number || selectedBill.diary_no}/${selectedBill.receiving_number || selectedBill.tracking_id}`)}`}
+                            alt="QR"
+                            className="w-12 h-12"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     <Button variant="outline" className="w-full gap-2 border-primary/20 hover:bg-primary/5 font-bold" onClick={handlePrint}>
@@ -719,84 +1308,96 @@ export default function FileTracking() {
                         <History className="w-6 h-6 text-primary" />
                         All Entries
                       </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">Found {filteredSearchResults.length} records matching your search</p>
+                      <p className="text-sm text-muted-foreground mt-1">Found {processedSearchResults.length} records matching your filters</p>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="rounded-md border border-border/50 overflow-hidden">
-                      <Table>
-                        <TableHeader className="bg-muted/50">
-                          <TableRow>
-                            <TableHead className="text-xs uppercase font-bold">Diary No</TableHead>
-                            <TableHead className="text-xs uppercase font-bold text-center">Track QR</TableHead>
-                            <TableHead className="text-xs uppercase font-bold">Subject</TableHead>
-                            <TableHead className="text-xs uppercase font-bold">Marked To</TableHead>
-                            <TableHead className="text-xs uppercase font-bold text-center">Action</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredSearchResults.length === 0 ? (
+                    <div className="space-y-4">
+                      <div className="rounded-md border border-border/50 overflow-hidden">
+                        <Table>
+                          <TableHeader className="bg-muted/50">
                             <TableRow>
-                              <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                                No records found matching "{searchQuery}"
-                              </TableCell>
+                              <TableHead className="text-xs uppercase font-bold">Diary No</TableHead>
+                              <TableHead className="text-xs uppercase font-bold text-center">Track QR</TableHead>
+                              <TableHead className="text-xs uppercase font-bold">Subject</TableHead>
+                              <TableHead className="text-xs uppercase font-bold">Marked To</TableHead>
+                              <TableHead className="text-xs uppercase font-bold text-center">Action</TableHead>
                             </TableRow>
-                          ) : (
-                            filteredSearchResults.map((file, i) => (
-                              <TableRow key={i} className="hover:bg-primary/5 transition-colors group">
-                                <TableCell className="font-mono text-xs font-bold text-primary">{file.cfo_diary_number}</TableCell>
-                                <TableCell className="text-center">
-                                  <div 
-                                    className="cursor-zoom-in transition-transform hover:scale-110"
-                                    onClick={() => handleQRClick(file.cfo_diary_number, file.receiving_number)}
-                                  >
-                                    <img 
-                                      src={`https://api.qrserver.com/v1/create-qr-code/?size=35x35&data=${encodeURIComponent(`${window.location.origin}/public-track/${file.cfo_diary_number}/${file.receiving_number}`)}`} 
-                                      alt="QR"
-                                      className="w-8 h-8 mx-auto rounded border border-border bg-white"
-                                    />
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                   <div className="font-semibold text-sm">{file.subject}</div>
-                                   <div className="text-[10px] text-muted-foreground">{file.receiving_number}</div>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant="outline" className="text-[10px] uppercase">
-                                    {sections.find(s => s.id === file.mark_to)?.name}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-8 gap-2 border-primary/20 hover:bg-primary hover:text-white"
-                                    onClick={() => {
-                                      setSelectedBill({
-                                        ...file,
-                                        diary_no: file.cfo_diary_number,
-                                        party_name: file.received_from,
-                                        amount: 0
-                                      });
-                                    }}
-                                  >
-                                    View Timeline <ArrowRight className="w-3 h-3" />
-                                  </Button>
+                          </TableHeader>
+                          <TableBody>
+                            {paginatedSearchFiles.length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                  No records found matching criteria
                                 </TableCell>
                               </TableRow>
-                            ))
-                          )}
-                        </TableBody>
-                      </Table>
+                            ) : (
+                              paginatedSearchFiles.map((file, i) => (
+                                <TableRow key={i} className="hover:bg-primary/5 transition-colors group">
+                                  <TableCell className="font-mono text-xs font-bold text-primary">{file.cfo_diary_number}</TableCell>
+                                  <TableCell className="text-center">
+                                    <div
+                                      className="cursor-zoom-in transition-transform hover:scale-110"
+                                      onClick={() => handleQRClick(file.cfo_diary_number, file.receiving_number)}
+                                    >
+                                      <img
+                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=35x35&data=${encodeURIComponent(`${window.location.origin}/public-track/${file.cfo_diary_number}/${file.receiving_number}`)}&color=0ea5e9`}
+                                        alt="QR"
+                                        className="w-8 h-8 mx-auto rounded border border-border bg-white"
+                                      />
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="font-semibold text-sm">{file.subject}</div>
+                                    <div className="text-[10px] text-muted-foreground">{file.receiving_number}</div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline" className="text-[10px] uppercase">
+                                      {sections.find(s => s.id === file.mark_to)?.name}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-8 gap-2 border-primary/20 hover:bg-primary hover:text-white"
+                                      onClick={() => {
+                                        setSelectedBill({
+                                          ...file,
+                                          diary_no: file.cfo_diary_number,
+                                          party_name: file.received_from,
+                                          amount: 0
+                                        });
+                                      }}
+                                    >
+                                      View Timeline <ArrowRight className="w-3 h-3" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      {/* Search Pagination */}
+                      {totalSearchPages > 1 && (
+                        <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                          <span className="text-xs text-muted-foreground font-bold">Showing page {searchPage} of {totalSearchPages}</span>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setSearchPage(p => Math.max(1, p - 1))} disabled={searchPage === 1}>Previous</Button>
+                            <Button variant="outline" size="sm" onClick={() => setSearchPage(p => Math.min(totalSearchPages, p + 1))} disabled={searchPage === totalSearchPages}>Next</Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
               ) : (
                 <div className="space-y-6 animate-fade-in">
                   <div className="flex justify-between items-center">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setSelectedBill(null)}
                       className="gap-2 text-muted-foreground hover:text-primary transition-colors"
                     >
@@ -904,7 +1505,7 @@ export default function FileTracking() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6 border-t border-border/50">
+            <CardContent id="registration-form-container" onKeyDown={handleKeyDown} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6 border-t border-border/50">
               <div className="space-y-2">
                 <Label className="text-xs uppercase font-bold text-muted-foreground">CFO Office Diary No <span className="text-emerald-500 text-[9px]">(Auto-Generated)</span></Label>
                 <Input
@@ -919,9 +1520,9 @@ export default function FileTracking() {
                 <Input
                   type="date"
                   value={formData.inward_date}
-                  readOnly={currentRole !== 'cfo'}
+                  readOnly={!isCFORole}
                   onChange={e => setFormData({ ...formData, inward_date: e.target.value })}
-                  className={`bg-muted/20 border-border/50 ${currentRole !== 'cfo' ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  className={`bg-muted/20 border-border/50 ${!isCFORole ? 'opacity-70 cursor-not-allowed' : ''}`}
                 />
               </div>
 
@@ -930,9 +1531,9 @@ export default function FileTracking() {
                 <Input
                   placeholder="Department or Section"
                   value={formData.received_from}
-                  readOnly={currentRole !== 'cfo'}
+                  readOnly={!isCFORole}
                   onChange={e => setFormData({ ...formData, received_from: e.target.value })}
-                  className={`bg-muted/20 border-border/50 ${currentRole !== 'cfo' ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  className={`bg-muted/20 border-border/50 ${!isCFORole ? 'opacity-70 cursor-not-allowed' : ''}`}
                 />
               </div>
 
@@ -1227,8 +1828,52 @@ export default function FileTracking() {
         </TabsContent>
       </Tabs>
 
+      <style>{`
+        @media print {
+          /* Hide everything by default using visibility */
+          body { visibility: hidden !important; }
+          
+          /* Only show the ticket and its descendants */
+          .print-only, .print-only * { visibility: visible !important; }
+          
+          /* Force layout for the printable area */
+          .print-only { 
+            visibility: visible !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            display: block !important;
+            transform: none !important;
+            box-shadow: none !important;
+            color: black !important;
+          }
+
+          /* Reset text colors for print specifically to ensure contrast */
+          .print-only p, .print-only span, .print-only div { color: black !important; }
+          .print-only .text-primary { color: #0ea5e9 !important; }
+          .print-only .bg-zinc-900, .print-only .bg-zinc-950, .print-only .bg-slate-50 { background: white !important; }
+
+          /* Ensure all background colors and images are printed */
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          
+          @page { margin: 0; size: auto; }
+        }
+        
+        /* Dashboard Dark Theme Overrides for Ticket Modal */
+        [data-radix-portal] .bg-zinc-950, [data-radix-portal] .bg-slate-50 { background-color: #09090b !important; }
+        [data-radix-portal] .bg-white { background-color: #18181b !important; border: 1px solid rgba(255,255,255,0.1) !important; }
+        [data-radix-portal] .text-zinc-800, [data-radix-portal] .text-zinc-400 { color: #f4f4f5 !important; }
+        [data-radix-portal] .bg-slate-50.rounded-2xl { background-color: #27272a !important; border: 1px solid rgba(255,255,255,0.05) !important; }
+        [data-radix-portal] .border-zinc-100 { border-color: rgba(255,255,255,0.05) !important; }
+      `}</style>
+
       {/* Hidden Printable Covering Page */}
-      <div className="print-only hidden">
+      <div className={`print-only hidden ${isPrintingQR ? '' : 'no-print'}`}>
         <div ref={printRef} className="p-10 font-sans text-black bg-white min-h-[11in] w-[8.5in] relative">
           {/* Header */}
           <div className="text-center border-b-2 border-black pb-4 mb-8 flex justify-between items-end">
@@ -1319,44 +1964,97 @@ export default function FileTracking() {
           </div>
         </div>
       </div>
-      {/* Full Screen QR Modal */}
+      {/* Full Screen Ticket & QR Modal (Matches Public Tracking Layout) */}
       <Dialog open={!!qrFullScreen} onOpenChange={(open) => !open && setQrFullScreen(null)}>
-        <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden rounded-3xl border-none">
-          <div className="bg-primary p-8 flex flex-col items-center gap-6 text-center">
-            <div className="bg-white p-4 rounded-3xl shadow-2xl scale-110 transition-transform">
-              {qrFullScreen && (
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/public-track/${qrFullScreen.diary}/${qrFullScreen.receiving}`)}`} 
-                  alt="QR Full"
-                  className="w-64 h-64"
-                />
-              )}
-            </div>
-            
-            <div className="text-white space-y-2">
-              <h2 className="text-2xl font-black uppercase tracking-tight">Verified Tracking Code</h2>
-              <p className="text-primary-foreground/70 text-sm font-medium">Scan with any mobile device to see real-time movement history</p>
-            </div>
+        <DialogContent className={`sm:max-w-[450px] p-0 overflow-hidden rounded-[40px] border-none bg-zinc-950 shadow-2xl ${isPrintingQR ? 'print-only !fixed !inset-0 !m-0 !max-w-none !h-screen !w-screen !rounded-none !bg-white !shadow-none !translate-x-0 !translate-y-0 !top-0 !left-0 z-[9999]' : ''}`} style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+          {(() => {
+            const ticket = qrFullScreen ? records.find(r => r.cfo_diary_number === qrFullScreen.diary || r.receiving_number === qrFullScreen.receiving) : null;
+            return (
+              <div className={`w-full h-full ${isPrintingQR ? 'overflow-visible max-h-none' : 'max-h-[90vh] overflow-y-auto'} overflow-x-hidden font-sans pb-6`}>
+                {/* Header */}
+                <div className="bg-primary px-6 pt-8 pb-16 rounded-b-[40px] shadow-2xl relative overflow-hidden shrink-0">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+                  <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full -ml-10 -mb-10 blur-2xl"></div>
 
-            <div className="grid grid-cols-2 gap-4 w-full mt-2">
-               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/20">
-                  <p className="text-[10px] uppercase font-bold text-white/60">Diary No</p>
-                  <p className="text-sm font-mono font-bold text-white">{qrFullScreen?.diary}</p>
-               </div>
-               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/20">
-                  <p className="text-[10px] uppercase font-bold text-white/60">Receiving No</p>
-                  <p className="text-sm font-mono font-bold text-white">{qrFullScreen?.receiving}</p>
-               </div>
-            </div>
+                  <div className="relative flex justify-center items-center mb-4">
+                    <ShieldCheck className="w-10 h-10 text-emerald-400" />
+                  </div>
 
-            <Button 
-              variant="outline" 
-              className="w-full bg-white text-primary border-none font-bold hover:bg-zinc-100"
-              onClick={() => window.print()}
-            >
-              <Printer className="w-4 h-4 mr-2" /> Print QR Code
-            </Button>
-          </div>
+                  <div className="relative text-center space-y-1">
+                    <h1 className="text-white text-xl font-black tracking-tighter uppercase">Verified Tracking</h1>
+                    <p className="text-primary-foreground/70 text-[10px] font-bold uppercase tracking-widest">Karachi Water & Sewerage Board</p>
+                  </div>
+                </div>
+
+                {/* Main Content Card */}
+                <div className="px-5 -mt-10 relative z-10 shrink-0">
+                  <Card className="rounded-[30px] border-none shadow-xl overflow-hidden bg-white">
+                    <div className="p-1 bg-gradient-to-r from-emerald-500 to-primary"></div>
+                    <CardContent className="pt-6 space-y-6">
+
+                      {/* Tracking Numbers */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-slate-50 rounded-2xl p-4 text-center border-2 border-primary/5 relative group overflow-hidden">
+                          <span className="text-[9px] font-black text-primary/50 uppercase tracking-[0.1em]">CFO Diary</span>
+                          <p className="text-sm font-black text-zinc-800 font-mono mt-1 tracking-tighter">{ticket?.cfo_diary_number || qrFullScreen?.diary}</p>
+                        </div>
+                        <div className="bg-slate-50 rounded-2xl p-4 text-center border-2 border-emerald-500/5 relative group overflow-hidden">
+                          <span className="text-[9px] font-black text-emerald-500/50 uppercase tracking-[0.1em]">Receiving No</span>
+                          <p className="text-sm font-black text-zinc-800 font-mono mt-1 tracking-tighter">{ticket?.receiving_number || qrFullScreen?.receiving}</p>
+                        </div>
+                      </div>
+
+                      {/* File Info */}
+                      <div className="space-y-4 pt-4 border-t border-zinc-100">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold text-zinc-400 uppercase">Subject</span>
+                            <p className="text-xs font-bold text-zinc-800 leading-tight">{ticket?.subject || "Subject Details"}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 shrink-0">
+                            <Building2 className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold text-zinc-400 uppercase">Current Section</span>
+                            <p className="text-xs font-black text-blue-600 uppercase tracking-tight">{ticket?.mark_to || "CFO Office"}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* QR Section */}
+                      <div className="mt-4 p-5 bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-[30px] flex flex-col items-center gap-4 text-center shadow-inner print:bg-white print:border-none print:shadow-none">
+                        <div className="bg-white p-3 rounded-2xl shadow-xl border-4 border-[#0ea5e9]/20">
+                          <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/public-track/${qrFullScreen?.diary}/${qrFullScreen?.receiving}`)}&color=0ea5e9`}
+                            alt="QR"
+                            className="w-28 h-28"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-primary text-sm font-black uppercase tracking-widest print:text-primary">Scan to Track Live</p>
+                          <p className="text-zinc-400 text-[10px] font-medium tracking-tight mt-1 print:text-zinc-400 font-mono">CODE: {qrFullScreen?.receiving}</p>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 flex justify-center">
+                        <Button
+                          className={`w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-xl ${isPrintingQR ? 'hidden' : ''}`}
+                          onClick={handlePrintQR}
+                        >
+                          <Printer className="w-4 h-4 mr-2" /> Print Tracking Slip
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>

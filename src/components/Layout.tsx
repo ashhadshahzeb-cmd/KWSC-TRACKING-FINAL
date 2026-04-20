@@ -28,46 +28,134 @@ import { useGSAP } from "@gsap/react";
 import { useTheme } from "@/components/ThemeProvider";
 import { Sun, Moon } from "lucide-react";
 
-const topNavItems = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/book-section/file-tracking", icon: Shield, label: "File Tracking" },
-];
+const getTimeBasedGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return "GOOD MORNING";
+  if (hour >= 12 && hour < 17) return "GOOD AFTERNOON";
+  if (hour >= 17 && hour < 21) return "GOOD EVENING";
+  return "GOOD NIGHT";
+};
 
-const categories = [
-  {
-    id: "book-section",
-    label: "Book Section",
-    items: [
-      { to: "/book-section/emp-details", label: "Employee Details", icon: ListTree },
-      { to: "/book-section/medical", label: "Medical Section", icon: Stethoscope },
-      { to: "/book-section/contractor", label: "Contractor Section", icon: Briefcase },
-      { to: "/book-section/security-deposit", label: "Security Deposit", icon: Lock },
-      { to: "/book-section/pol-bills", label: "POL Bills", icon: FileText },
-      { to: "/book-section/contingencies", label: "Contingencies", icon: AlertCircle },
-      { to: "/book-section/bill-dispatch", label: "Bill Dispatch", icon: ArrowLeftRight },
-    ]
-  }
-];
+const WelcomeCFO = ({ onComplete }: { onComplete: () => void }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const greeting = getTimeBasedGreeting();
+  const fullText = `${greeting} CFO, HOW ARE YOU?`;
 
-const bottomNavItems = [
-  { to: "/general-ledger", icon: BookOpen, label: "General Ledger" },
-  { to: "/book-section/cheque-record", icon: CreditCard, label: "Cheque Record" },
-  { to: "/bank-accounts", icon: Landmark, label: "Bank Accounts" },
-  { to: "/transactions", icon: ArrowLeftRight, label: "Transactions" },
-  { to: "/bank-entries", icon: CreditCard, label: "Bank Entries" },
-];
+  useGSAP(() => {
+    const tl = gsap.timeline({ onComplete });
+    
+    tl.fromTo(containerRef.current, 
+      { opacity: 0 }, 
+      { opacity: 1, duration: 0.5 }
+    );
+
+    tl.fromTo(".welcome-char", 
+      { y: 50, opacity: 0, rotateX: -90 }, 
+      { y: 0, opacity: 1, rotateX: 0, duration: 0.6, stagger: 0.02, ease: "back.out(2)" },
+      "-=0.2"
+    );
+
+    tl.to(".welcome-char", {
+      scale: 1.1,
+      color: "#0ea5e9",
+      duration: 0.4,
+      stagger: { each: 0.015, from: "center" },
+      ease: "power2.inOut"
+    });
+
+    tl.to(containerRef.current, {
+      opacity: 0,
+      scale: 1.1,
+      filter: "blur(30px)",
+      duration: 1,
+      delay: 1.5,
+      ease: "power4.in"
+    });
+  }, { scope: containerRef });
+
+  return (
+    <div ref={containerRef} className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#09090b]">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#0ea5e9]/10 blur-[130px] rounded-full animate-pulse" />
+      </div>
+      
+      <div className="text-center relative z-10 px-6">
+        <div className="mb-10 flex justify-center">
+          <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-tr from-[#0ea5e9] via-blue-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-[#0ea5e9]/30 transform rotate-12">
+            <Shield className="w-10 h-10 text-white -rotate-12" />
+          </div>
+        </div>
+        <h1 className="welcome-text text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter text-[#f4f4f5] flex flex-wrap justify-center gap-x-4">
+          {fullText.split(" ").map((word, i) => (
+            <span key={i} className="inline-flex">
+               {word.split("").map((char, j) => (
+                 <span key={j} className="welcome-char inline-block">{char}</span>
+               ))}
+            </span>
+          ))}
+        </h1>
+        <div className="mt-10 flex flex-col items-center gap-3">
+          <p className="text-[#0ea5e9]/70 font-bold tracking-[0.4em] uppercase text-[10px] animate-pulse">
+            KW&SC FINANCE - Executive Suite
+          </p>
+          <div className="w-64 h-[1px] bg-gradient-to-r from-transparent via-[#0ea5e9]/30 to-transparent" />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openCategory, setOpenCategory] = useState<string | null>("book-section");
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, userRole } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const mainRef = useRef<HTMLDivElement>(null);
+  
+  const isCFORole = userRole === 'cfo';
+
+  const [showSplash, setShowSplash] = useState(() => {
+    if (!isCFORole) return false;
+    return true;
+  });
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+  };
+
+  const topNavItems = [
+    { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/book-section/file-tracking", icon: Shield, label: "File Tracking" },
+  ];
+
+  const categories = isCFORole ? [
+    {
+      id: "book-section",
+      label: "Sections Management",
+      items: [
+        { to: "/book-section/emp-details", label: "Employee Details", icon: ListTree },
+        { to: "/book-section/medical", label: "Medical Section", icon: Stethoscope },
+        { to: "/book-section/contractor", label: "Contractor Section", icon: Briefcase },
+        { to: "/book-section/security-deposit", label: "Security Deposit", icon: Lock },
+        { to: "/book-section/pol-bills", label: "POL Bills", icon: FileText },
+        { to: "/book-section/contingencies", label: "Contingencies", icon: AlertCircle },
+        { to: "/book-section/bill-dispatch", label: "Bill Dispatch", icon: ArrowLeftRight },
+      ]
+    }
+  ] : [];
+
+  const bottomNavItems = isCFORole ? [
+    { to: "/general-ledger", icon: BookOpen, label: "General Ledger" },
+    { to: "/book-section/cheque-record", icon: CreditCard, label: "Cheque Record" },
+    { to: "/bank-accounts", icon: Landmark, label: "Bank Accounts" },
+    { to: "/transactions", icon: ArrowLeftRight, label: "Transactions" },
+    { to: "/bank-entries", icon: CreditCard, label: "Bank Entries" },
+  ] : [];
 
   useGSAP(() => {
-    setMobileOpen(false); // Auto close mobile drawer on route change
+    setMobileOpen(false);
     if (mainRef.current) {
       gsap.fromTo(
         mainRef.current,
@@ -79,7 +167,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background relative">
-      {/* Mobile Backdrop */}
+      {showSplash && <WelcomeCFO onComplete={handleSplashComplete} />}
       {mobileOpen && (
         <div
           className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
@@ -87,7 +175,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
           "fixed lg:relative inset-y-0 left-0 z-50 flex flex-col border-r border-border bg-sidebar transition-all duration-300",
@@ -98,16 +185,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       >
         <div className="flex items-center gap-2 px-4 py-5 border-b border-border justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center shrink-0">
-              <Shield className="w-4 h-4 text-primary-foreground" />
+            <div className="w-10 h-10 rounded-md bg-[#0ea5e9]/10 flex items-center justify-center shrink-0">
+              <Shield className="w-5 h-5 text-[#0ea5e9]" />
             </div>
             {!collapsed && (
-              <span className="text-sm font-bold tracking-wide text-foreground truncate">
-                FinLedger
+              <span className="text-sm font-black tracking-tight text-[#0ea5e9] truncate">
+                KW&SC FINANCE
               </span>
             )}
           </div>
-          {/* Mobile Close Button */}
           <button
             className="lg:hidden text-muted-foreground hover:text-foreground"
             onClick={() => setMobileOpen(false)}
@@ -125,7 +211,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors",
                   isActive
-                    ? "bg-primary/10 text-primary font-medium"
+                    ? "bg-[#0ea5e9]/10 text-[#0ea5e9] font-medium"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )
               }
@@ -135,53 +221,50 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </NavLink>
           ))}
 
-          {/* Accordion Categories */}
-          <div className="flex flex-col mt-2 border-t border-border/50 pt-2">
-            {categories.map((category) => {
-              const isOpen = openCategory === category.id;
-              return (
-                <div key={category.id} className="flex flex-col">
-                  <button
-                    onClick={() => !collapsed && setOpenCategory(isOpen ? null : category.id)}
-                    className={cn(
-                      "flex items-center w-full px-4 py-3 text-sm transition-colors text-sidebar-foreground",
-                      isOpen ? "bg-black/40 font-medium" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    )}
-                  >
-                    {!collapsed ? (
-                      <span>{category.label}</span>
-                    ) : (
-                      <span className="w-full text-center text-xs font-semibold">{category.label.charAt(0)}</span>
-                    )}
-                  </button>
-
-                  {!collapsed && isOpen && (
-                    <div className="flex flex-col bg-black/10 py-2 space-y-1">
-                      {category.items.map((item) => (
-                        <NavLink
-                          key={item.to}
-                          to={item.to}
-                          className={({ isActive }) =>
-                            cn(
-                              "px-8 py-2 text-sm transition-colors flex items-center gap-2",
-                              isActive
-                                ? "text-primary font-medium bg-primary/5"
-                                : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-                            )
-                          }
-                        >
-                          {item.icon && <item.icon className="w-3.5 h-3.5 shrink-0 opacity-70" />}
-                          <span className="truncate">{item.label}</span>
-                        </NavLink>
-                      ))}
-                    </div>
+          {categories.map((category) => {
+            const isOpen = openCategory === category.id;
+            return (
+              <div key={category.id} className="flex flex-col mt-2 border-t border-border/50 pt-2">
+                <button
+                  onClick={() => !collapsed && setOpenCategory(isOpen ? null : category.id)}
+                  className={cn(
+                    "flex items-center w-full px-4 py-3 text-sm transition-colors text-sidebar-foreground",
+                    isOpen ? "bg-sidebar-accent font-medium text-[#0ea5e9]" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   )}
-                </div>
-              );
-            })}
-          </div>
+                >
+                  {!collapsed ? (
+                    <span>{category.label}</span>
+                  ) : (
+                    <Shield className="w-4 h-4 mx-auto" />
+                  )}
+                </button>
 
-          <div className="pt-2 border-t border-border/50 space-y-1">
+                {!collapsed && isOpen && (
+                  <div className="flex flex-col bg-sidebar-accent/30 py-2 space-y-1">
+                    {category.items.map((item) => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        className={({ isActive }) =>
+                          cn(
+                            "px-8 py-2 text-sm transition-colors flex items-center gap-2",
+                            isActive
+                              ? "text-[#0ea5e9] font-medium bg-[#0ea5e9]/5"
+                              : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                          )
+                        }
+                      >
+                        {item.icon && <item.icon className="w-3.5 h-3.5 shrink-0 opacity-70" />}
+                        <span className="truncate">{item.label}</span>
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          <div className={cn("pt-2 border-t border-border/50 space-y-1", !isCFORole && "hidden")}>
             {bottomNavItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -190,7 +273,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors",
                     isActive
-                      ? "bg-primary/10 text-primary font-medium"
+                      ? "bg-[#0ea5e9]/10 text-[#0ea5e9] font-medium"
                       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   )
                 }
@@ -218,47 +301,46 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <button
             onClick={toggleTheme}
             className={cn(
-              "flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors hover:bg-sidebar-accent",
-              collapsed && "justify-center"
-            )}
-            title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          >
-            {theme === "dark" ? (
-              <>
-                <Sun className="w-4 h-4 shrink-0 text-yellow-500" />
-                {!collapsed && <span>Light Mode</span>}
-              </>
-            ) : (
-              <>
-                <Moon className="w-4 h-4 shrink-0 text-indigo-400" />
-                {!collapsed && <span>Dark Mode</span>}
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="hidden lg:flex items-center justify-center w-full p-2 rounded-md text-muted-foreground hover:bg-sidebar-accent transition-colors"
-          >
-            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
+                  "flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors hover:bg-sidebar-accent",
+                  collapsed && "justify-center"
+                )}
+                title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              >
+                {theme === "dark" ? (
+                  <>
+                    <Sun className="w-4 h-4 shrink-0 text-yellow-500" />
+                    {!collapsed && <span>Light Mode</span>}
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-4 h-4 shrink-0 text-indigo-400" />
+                    {!collapsed && <span>Dark Mode</span>}
+                  </>
+                )}
+              </button>
+    
+              <button
+                onClick={() => setCollapsed(!collapsed)}
+                className="hidden lg:flex items-center justify-center w-full p-2 rounded-md text-muted-foreground hover:bg-sidebar-accent transition-colors"
+              >
+                {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+              </button>
+            </div>
+          </aside>
+    
+          <main className="flex-1 flex flex-col overflow-auto w-full relative">
+            <div className="lg:hidden flex items-center p-4 border-b border-white/5 bg-sidebar/80 backdrop-blur-md sticky top-0 z-30">
+              <button onClick={() => setMobileOpen(true)} className="p-2 -ml-2 text-foreground/80 hover:text-primary">
+                <Menu className="w-6 h-6" />
+              </button>
+              <div className="ml-2 font-black tracking-tighter text-[#0ea5e9] flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                KW&SC FINANCE
+              </div>
+            </div>
+    
+            <div ref={mainRef} className="p-4 md:p-6 w-full max-w-[1400px] mx-auto opacity-0 flex-1">{children}</div>
+          </main>
         </div>
-      </aside>
-
-      {/* Main content */}
-      <main className="flex-1 flex flex-col overflow-auto w-full relative">
-        {/* Mobile Header */}
-        <div className="lg:hidden flex items-center p-4 border-b border-white/5 bg-sidebar/80 backdrop-blur-md sticky top-0 z-30">
-          <button onClick={() => setMobileOpen(true)} className="p-2 -ml-2 text-foreground/80 hover:text-primary">
-            <Menu className="w-6 h-6" />
-          </button>
-          <div className="ml-2 font-bold tracking-widest text-primary flex items-center gap-2">
-            <Shield className="w-5 h-5" /> FINLEDGER
-          </div>
-        </div>
-
-        <div ref={mainRef} className="p-4 md:p-6 w-full max-w-[1400px] mx-auto opacity-0 flex-1">{children}</div>
-      </main>
-    </div>
-  );
-}
+      );
+    }
