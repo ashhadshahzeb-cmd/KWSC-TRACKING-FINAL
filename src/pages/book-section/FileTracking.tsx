@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   FileSearch,
   Building2,
+  Shield,
   Calendar,
   User,
   MessageSquare,
@@ -650,11 +651,12 @@ export default function FileTracking() {
       if (localMatch) {
         setSelectedBill({
           ...localMatch,
-          diary_no: localMatch.cfo_diary_number, // map for display consistency
-          party_name: localMatch.received_from,
-          amount: 0 // local records don't have amount in this simple demo
+          diary_no: localMatch.cfo_diary_number || localMatch.diary_no,
+          party_name: localMatch.received_from || localMatch.party_name,
+          amount: localMatch.amount || 0,
+          history: localMatch.history || []
         });
-        toast.success("Found record in current session tray");
+        toast.success("Found record matching your input");
         setLoading(false);
         return;
       }
@@ -1249,17 +1251,20 @@ export default function FileTracking() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-xs font-bold font-mono">TRACKING ID / DIARY NO</Label>
-                  <div className="flex gap-2">
+                  <div className="relative">
                     <Input
                       placeholder="e.g. FL-2024-1234"
                       value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                      className="bg-muted/20 border-border/50 h-10 font-mono text-sm"
+                      onChange={e => {
+                        setSearchQuery(e.target.value);
+                        // Trigger search automatically as user types
+                        setTimeout(() => handleSearch(), 0);
+                      }}
+                      className="bg-muted/20 border-primary/20 h-12 font-mono text-base pr-10 focus-visible:ring-primary shadow-inner"
                     />
-                    <Button onClick={handleSearch} disabled={loading} className="bg-primary hover:bg-primary/90 px-3">
-                      {loading ? <Clock className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                    </Button>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-primary/40">
+                      {loading ? <Clock className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+                    </div>
                   </div>
                 </div>
 
@@ -1469,7 +1474,7 @@ export default function FileTracking() {
                               </div>
                               <div className="text-xs font-semibold flex items-center gap-1 mb-2">
                                 <Building2 className="w-3 h-3 text-muted-foreground" />
-                                {step.location.toUpperCase()}
+                                {step.location?.toUpperCase() || "PROCESSING"}
                               </div>
                               <div className="text-xs text-muted-foreground italic flex gap-1 items-start bg-background/50 p-2 rounded-md">
                                 <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
