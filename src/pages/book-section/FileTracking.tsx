@@ -1866,7 +1866,7 @@ export default function FileTracking() {
           /* Ensure all background colors and images are printed */
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           
-          @page { margin: 0; size: auto; }
+          @page { margin: 0; size: A5 portrait; }
         }
         
         /* Dashboard Dark Theme Overrides for Ticket Modal */
@@ -1879,13 +1879,13 @@ export default function FileTracking() {
 
       {/* Hidden Printable Covering Page */}
       <div className={`print-only hidden ${isPrintingQR ? '' : 'no-print'}`}>
-        <div ref={printRef} className="p-10 font-sans text-black bg-white min-h-[11in] w-[8.5in] relative">
+        <div ref={printRef} className="p-6 font-sans text-black bg-white min-h-[210mm] w-[148mm] mx-auto relative overflow-hidden">
           {/* Header */}
-          <div className="text-center border-b-2 border-black pb-4 mb-8 flex justify-between items-end">
+          <div className="text-center border-b-2 border-black pb-4 mb-4 flex justify-between items-end">
             <div className="text-left">
-              <h1 className="text-2xl font-black uppercase tracking-tighter">Karachi Water & Sewerage Board</h1>
-              <h2 className="text-lg font-bold uppercase mt-1">Finance Department - File Movement Slip</h2>
-              <div className="flex gap-6 mt-4 font-mono text-xs">
+              <h1 className="text-xl font-black uppercase tracking-tighter">Karachi Water Corporation</h1>
+              <h2 className="text-sm font-bold uppercase mt-1">Finance Department - File Movement Slip</h2>
+              <div className="flex gap-4 mt-2 font-mono text-[10px]">
                 <span>Ref No: {selectedBill?.diary_no}</span>
                 <span>Tracking ID: {selectedBill?.tracking_id}</span>
               </div>
@@ -1893,10 +1893,11 @@ export default function FileTracking() {
             {selectedBill && (
               <div className="flex flex-col items-center gap-1">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`${window.location.origin}/public-track/${selectedBill.cfo_diary_number || selectedBill.diary_no}/${selectedBill.receiving_number || selectedBill.tracking_id}`)}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`${window.location.origin}/public-track/${selectedBill.cfo_diary_number || selectedBill.diary_no}/${selectedBill.receiving_number || selectedBill.tracking_id}?sec=${selectedBill.mark_to || selectedBill.current_status || 'CFO'}`)}`}
                   alt="QR Code"
                   className="w-24 h-24 border border-black p-1"
                 />
+                <span className="text-[7px] font-bold mt-1 max-w-[100px] text-center uppercase">Prepared by Engineer Tariq Zamir</span>
                 <span className="text-[8px] font-bold font-mono">{selectedBill.receiving_number || selectedBill.tracking_id}</span>
               </div>
             )}
@@ -1987,7 +1988,7 @@ export default function FileTracking() {
 
                   <div className="relative text-center space-y-1">
                     <h1 className="text-white text-xl font-black tracking-tighter uppercase">Verified Tracking</h1>
-                    <p className="text-primary-foreground/70 text-[10px] font-bold uppercase tracking-widest">Karachi Water & Sewerage Board</p>
+                    <p className="text-primary-foreground/70 text-[10px] font-bold uppercase tracking-widest">Karachi Water Corporation</p>
                   </div>
                 </div>
 
@@ -2033,12 +2034,13 @@ export default function FileTracking() {
 
                       {/* QR Section */}
                       <div className="mt-4 p-5 bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-[30px] flex flex-col items-center gap-4 text-center shadow-inner print:bg-white print:border-none print:shadow-none">
-                        <div className="bg-white p-3 rounded-2xl shadow-xl border-4 border-[#0ea5e9]/20">
+                        <div className="bg-white p-3 rounded-2xl shadow-xl border-4 border-[#0ea5e9]/20 flex flex-col items-center">
                           <img
                             src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/public-track/${qrFullScreen?.diary}/${qrFullScreen?.receiving}`)}&color=0ea5e9`}
                             alt="QR"
                             className="w-28 h-28"
                           />
+                          <span className="text-[8px] font-bold mt-2 text-zinc-600 uppercase text-center">Prepared by Engineer Tariq Zamir</span>
                         </div>
                         <div>
                           <p className="text-primary text-sm font-black uppercase tracking-widest print:text-primary">Scan to Track Live</p>

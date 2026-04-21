@@ -43,14 +43,14 @@ const WelcomeCFO = ({ onComplete }: { onComplete: () => void }) => {
 
   useGSAP(() => {
     const tl = gsap.timeline({ onComplete });
-    
-    tl.fromTo(containerRef.current, 
-      { opacity: 0 }, 
+
+    tl.fromTo(containerRef.current,
+      { opacity: 0 },
       { opacity: 1, duration: 0.5 }
     );
 
-    tl.fromTo(".welcome-char", 
-      { y: 50, opacity: 0, rotateX: -90 }, 
+    tl.fromTo(".welcome-char",
+      { y: 50, opacity: 0, rotateX: -90 },
       { y: 0, opacity: 1, rotateX: 0, duration: 0.6, stagger: 0.02, ease: "back.out(2)" },
       "-=0.2"
     );
@@ -78,7 +78,7 @@ const WelcomeCFO = ({ onComplete }: { onComplete: () => void }) => {
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#0ea5e9]/10 blur-[130px] rounded-full animate-pulse" />
       </div>
-      
+
       <div className="text-center relative z-10 px-6">
         <div className="mb-10 flex justify-center">
           <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-tr from-[#0ea5e9] via-blue-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-[#0ea5e9]/30 transform rotate-12">
@@ -88,9 +88,9 @@ const WelcomeCFO = ({ onComplete }: { onComplete: () => void }) => {
         <h1 className="welcome-text text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter text-[#f4f4f5] flex flex-wrap justify-center gap-x-4">
           {fullText.split(" ").map((word, i) => (
             <span key={i} className="inline-flex">
-               {word.split("").map((char, j) => (
-                 <span key={j} className="welcome-char inline-block">{char}</span>
-               ))}
+              {word.split("").map((char, j) => (
+                <span key={j} className="welcome-char inline-block">{char}</span>
+              ))}
             </span>
           ))}
         </h1>
@@ -113,7 +113,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { signOut, userRole } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const mainRef = useRef<HTMLDivElement>(null);
-  
+
   const isCFORole = userRole === 'cfo';
 
   const [showSplash, setShowSplash] = useState(() => {
@@ -301,46 +301,46 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <button
             onClick={toggleTheme}
             className={cn(
-                  "flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors hover:bg-sidebar-accent",
-                  collapsed && "justify-center"
-                )}
-                title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-              >
-                {theme === "dark" ? (
-                  <>
-                    <Sun className="w-4 h-4 shrink-0 text-yellow-500" />
-                    {!collapsed && <span>Light Mode</span>}
-                  </>
-                ) : (
-                  <>
-                    <Moon className="w-4 h-4 shrink-0 text-indigo-400" />
-                    {!collapsed && <span>Dark Mode</span>}
-                  </>
-                )}
-              </button>
-    
-              <button
-                onClick={() => setCollapsed(!collapsed)}
-                className="hidden lg:flex items-center justify-center w-full p-2 rounded-md text-muted-foreground hover:bg-sidebar-accent transition-colors"
-              >
-                {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-              </button>
-            </div>
-          </aside>
-    
-          <main className="flex-1 flex flex-col overflow-auto w-full relative">
-            <div className="lg:hidden flex items-center p-4 border-b border-white/5 bg-sidebar/80 backdrop-blur-md sticky top-0 z-30">
-              <button onClick={() => setMobileOpen(true)} className="p-2 -ml-2 text-foreground/80 hover:text-primary">
-                <Menu className="w-6 h-6" />
-              </button>
-              <div className="ml-2 font-black tracking-tighter text-[#0ea5e9] flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                KW&SC FINANCE
-              </div>
-            </div>
-    
-            <div ref={mainRef} className="p-4 md:p-6 w-full max-w-[1400px] mx-auto opacity-0 flex-1">{children}</div>
-          </main>
+              "flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors hover:bg-sidebar-accent",
+              collapsed && "justify-center"
+            )}
+            title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {theme === "dark" ? (
+              <>
+                <Sun className="w-4 h-4 shrink-0 text-yellow-500" />
+                {!collapsed && <span>Light Mode</span>}
+              </>
+            ) : (
+              <>
+                <Moon className="w-4 h-4 shrink-0 text-indigo-400" />
+                {!collapsed && <span>Dark Mode</span>}
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="hidden lg:flex items-center justify-center w-full p-2 rounded-md text-muted-foreground hover:bg-sidebar-accent transition-colors"
+          >
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
         </div>
-      );
-    }
+      </aside>
+
+      <main className="flex-1 flex flex-col overflow-auto w-full relative">
+        <div className="lg:hidden flex items-center p-4 border-b border-white/5 bg-sidebar/80 backdrop-blur-md sticky top-0 z-30">
+          <button onClick={() => setMobileOpen(true)} className="p-2 -ml-2 text-foreground/80 hover:text-primary">
+            <Menu className="w-6 h-6" />
+          </button>
+          <div className="ml-2 font-black tracking-tighter text-[#0ea5e9] flex items-center gap-2">
+            <Shield className="w-5 h-5" />
+            KW&SC FINANCE
+          </div>
+        </div>
+
+        <div ref={mainRef} className="p-4 md:p-6 w-full max-w-[1400px] mx-auto opacity-0 flex-1">{children}</div>
+      </main>
+    </div>
+  );
+}

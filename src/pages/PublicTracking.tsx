@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function PublicTracking() {
   const { diaryNo, receivingNo } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [record, setRecord] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +54,7 @@ export default function PublicTracking() {
             mainCategory: "employee",
             subCategory: "medical_case",
             status: "Unknown",
-            forward_to: "N/A",
+            forward_to: searchParams.get('sec') || "PROCESSING",
             history: []
           });
         }
@@ -87,12 +88,12 @@ export default function PublicTracking() {
           <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-6 h-6" />
           </Button>
-          <ShieldCheck className="w-8 h-8 text-emerald-400" />
+          <img src="https://www.kwsc.gos.pk/kwsc%20logo.png" alt="KWSC" className="w-8 h-8 object-contain" />
         </div>
 
         <div className="relative text-center space-y-2">
           <h1 className="text-white text-2xl font-black tracking-tighter uppercase">Verified Record</h1>
-          <p className="text-primary-foreground/70 text-xs font-bold uppercase tracking-widest">Karachi Water & Sewerage Board</p>
+          <p className="text-primary-foreground/70 text-xs font-bold uppercase tracking-widest">Karachi Water Corporation</p>
         </div>
       </div>
 
@@ -173,8 +174,11 @@ export default function PublicTracking() {
 
             {/* QR Section */}
             <div className="mt-8 p-6 bg-zinc-950 rounded-[30px] flex flex-col items-center gap-4 text-center">
-              <div className="w-24 h-24 bg-white p-2 rounded-2xl shadow-xl shadow-primary/20">
-                <QrCode className="w-full h-full text-zinc-900" />
+              <div className="bg-white p-3 rounded-2xl shadow-xl shadow-primary/20 flex flex-col items-center">
+                <div className="w-20 h-20">
+                  <QrCode className="w-full h-full text-zinc-900" />
+                </div>
+                <span className="text-[8px] font-bold mt-2 text-zinc-600 uppercase text-center">Prepared by<br/>Engineer Tariq Zamir</span>
               </div>
               <div>
                 <p className="text-white text-sm font-black">Digital Authentication</p>
@@ -184,7 +188,7 @@ export default function PublicTracking() {
 
           </CardContent>
           <div className="bg-zinc-100 p-4 text-center">
-            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">© 2024 KW&SB Finance Department</p>
+            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">© 2026 KWC Finance Department</p>
           </div>
         </Card>
       </div>

@@ -186,3 +186,8 @@
     display: none !important;
   }
 }
+
+@page {
+  margin: 0;
+  size: A5 portrait;
+}
