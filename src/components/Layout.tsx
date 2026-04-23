@@ -110,11 +110,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openCategory, setOpenCategory] = useState<string | null>("book-section");
   const location = useLocation();
-  const { signOut, userRole } = useAuth();
+  const { signOut, userRole, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const mainRef = useRef<HTMLDivElement>(null);
 
-  const isCFORole = userRole === 'cfo';
+  const isCFORole = userRole === 'cfo' || userRole === 'admin' || userRole === 'sub_cfo' || isAdmin;
 
   const [showSplash, setShowSplash] = useState(() => {
     if (!isCFORole) return false;
@@ -130,19 +130,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { to: "/book-section/file-tracking", icon: Shield, label: "File Tracking" },
   ];
 
-  const categories = isCFORole ? [
+  // Filter categories based on user role
+  const categories = (userRole || isAdmin) ? [
     {
       id: "book-section",
       label: "Sections Management",
       items: [
-        { to: "/book-section/emp-details", label: "Employee Details", icon: ListTree },
-        { to: "/book-section/medical", label: "Medical Section", icon: Stethoscope },
-        { to: "/book-section/contractor", label: "Contractor Section", icon: Briefcase },
-        { to: "/book-section/security-deposit", label: "Security Deposit", icon: Lock },
-        { to: "/book-section/pol-bills", label: "POL Bills", icon: FileText },
-        { to: "/book-section/contingencies", label: "Contingencies", icon: AlertCircle },
-        { to: "/book-section/bill-dispatch", label: "Bill Dispatch", icon: ArrowLeftRight },
-      ]
+        { to: "/book-section/emp-details", label: "Employee Details", icon: ListTree, visible: isCFORole },
+        { to: "/book-section/medical", label: "Medical Section", icon: Stethoscope, visible: isCFORole },
+        { to: "/book-section/contractor", label: "Contractor Section", icon: Briefcase, visible: isCFORole },
+        { to: "/book-section/security-deposit", label: "Security Deposit", icon: Lock, visible: isCFORole },
+        { to: "/book-section/pol-bills", label: "POL Bills", icon: FileText, visible: isCFORole },
+        { to: "/book-section/contingencies", label: "Contingencies", icon: AlertCircle, visible: isCFORole },
+        { to: "/book-section/bill-dispatch", label: "Bill Dispatch", icon: ArrowLeftRight, visible: isCFORole },
+        { to: "/book-section/books", label: "Books", icon: BookOpen, visible: isCFORole || userRole === 'books' },
+        { to: "/book-section/establishment", label: "Establishment", icon: Users, visible: isCFORole || userRole === 'establishment' },
+      ].filter(item => item.visible !== false)
     }
   ] : [];
 

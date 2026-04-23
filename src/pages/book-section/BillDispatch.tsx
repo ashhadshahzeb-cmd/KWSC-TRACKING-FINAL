@@ -283,6 +283,8 @@ export default function BillDispatch() {
         case 'director_account': path = "/book-section/file-tracking"; break;
         case 'director_finance': path = "/book-section/file-tracking"; break;
         case 'director_it': path = "/book-section/file-tracking"; break;
+        case 'books': path = "/book-section/file-tracking"; break;
+        case 'establishment': path = "/book-section/file-tracking"; break;
         default: path = "/book-section/file-tracking";
       }
 
@@ -606,16 +608,19 @@ export default function BillDispatch() {
                 <SelectTrigger className="bg-muted/20 border-border/50">
                   <SelectValue placeholder="Identify Section" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-zinc-900 border-primary/20 text-white">
                   <SelectItem value="cfo">CFO</SelectItem>
                   <SelectItem value="cia">CIA</SelectItem>
-                  <SelectItem value="budget">BUDGET</SelectItem>
-                  <SelectItem value="pension">PENSION</SelectItem>
-                  <SelectItem value="fund">FUND</SelectItem>
+                  <SelectItem value="budget">BUDGET (B)</SelectItem>
+                  <SelectItem value="pension">PENSION (P)</SelectItem>
+                  <SelectItem value="fund">FUND (F)</SelectItem>
                   <SelectItem value="internal_audit_1">INTERNAL AUDIT-1</SelectItem>
                   <SelectItem value="director_account">DIRECTOR ACCOUNT</SelectItem>
                   <SelectItem value="director_finance">DIRECTOR FINANCE</SelectItem>
                   <SelectItem value="director_it">DIRECTOR IT</SelectItem>
+                  <SelectItem value="sub_cfo">ASST. CFO (S)</SelectItem>
+                  <SelectItem value="books">BOOKS (B)</SelectItem>
+                  <SelectItem value="establishment">ESTABLISHMENT (E)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -41,7 +41,7 @@ export default function PublicTracking() {
             subject: data.subject,
             mainCategory: data.mainCategory,
             subCategory: data.subCategory,
-            status: "In-Progress", 
+            status: "In-Progress",
             forward_to: data.mark_to,
             history: data.history || []
           });
@@ -178,7 +178,7 @@ export default function PublicTracking() {
                 <div className="w-20 h-20">
                   <QrCode className="w-full h-full text-zinc-900" />
                 </div>
-                <span className="text-[8px] font-bold mt-2 text-zinc-600 uppercase text-center">Prepared by<br/>Engineer Tariq Zamir</span>
+                <span className="text-[8px] font-bold mt-2 text-zinc-600 uppercase text-center">Prepared by<br />Engineer Tariq Zamir</span>
               </div>
               <div>
                 <p className="text-white text-sm font-black">Digital Authentication</p>

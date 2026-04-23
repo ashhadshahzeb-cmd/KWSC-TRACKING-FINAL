@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { LogIn, UserPlus, ShieldCheck, Mail, Lock, User as UserIcon, Loader2, Building2, ChevronDown } from 'lucide-react';
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
 import { useAuth, DEPARTMENT_USERS } from '@/contexts/AuthContext';
 
 export default function AuthPage() {
@@ -19,31 +17,9 @@ export default function AuthPage() {
   const [fullName, setFullName] = useState('');
   const [showQuickAccess, setShowQuickAccess] = useState(false);
   const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
   const { localSignIn } = useAuth();
 
-  useGSAP(() => {
-    // Premium elastic entry animation for the main card
-    gsap.fromTo(
-      containerRef.current,
-      { opacity: 0, scale: 0.85, y: 40, rotationX: 10 },
-      { opacity: 1, scale: 1, y: 0, rotationX: 0, duration: 1.2, ease: "elastic.out(1, 0.7)", transformPerspective: 1000 }
-    );
-  }, []);
-
-  // Animate inputs dynamically
-  useGSAP(() => {
-    gsap.fromTo(
-      ".auth-field",
-      { opacity: 0, x: -30, filter: "blur(5px)" },
-      { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.6, stagger: 0.1, ease: "back.out(1.2)", clearProps: "filter" }
-    );
-    gsap.fromTo(
-      ".auth-bg-blob",
-      { scale: 0.8, opacity: 0.2, rotation: 0 },
-      { scale: 1.1, opacity: 0.6, rotation: 30, duration: 5, repeat: -1, yoyo: true, ease: "sine.inOut", stagger: 0.5 }
-    );
-  }, [isLogin]);
+  // CSS animations handle the entry effects now
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +92,7 @@ export default function AuthPage() {
       <div className="auth-bg-blob absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px]" />
       <div className="auth-bg-blob absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px]" />
 
-      <Card ref={containerRef} className="w-full max-w-md glass-card border-white/10 shadow-2xl relative z-10 opacity-0">
+      <Card className="w-full max-w-md glass-card border-white/10 shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-500">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <div className="p-3 bg-primary/20 rounded-2xl border border-primary/30">

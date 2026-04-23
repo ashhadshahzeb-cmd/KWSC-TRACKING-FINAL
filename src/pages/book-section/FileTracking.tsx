@@ -432,9 +432,9 @@ export default function FileTracking() {
   };
 
   const categoryOptions: Record<string, string[]> = {
-    employee: ["Medical", "Pension", "Salary / Arrears", "Loans / Advances", "Others"],
-    contractor: ["Security Deposit", "Contingencies", "POL Bills", "Others"],
-    others: ["POL Bills", "Contingencies", "Legal", "General / Miscellaneous"]
+    employee: ["Medical", "Pension", "Salary / Arrears", "Loans / Advances", "Establishment", "Others"],
+    contractor: ["Security Deposit", "Contingencies", "POL Bills", "Contractor Bills", "Contractor Concerns"],
+    others: ["POL Bills", "Contingencies", "Legal", "Books/Registers", "General / Miscellaneous"]
   };
 
   const handleFormReset = () => {
@@ -487,18 +487,18 @@ export default function FileTracking() {
 
         dbError = error;
 
-        // Update local state
-        const updatedRecords = [...records];
-        updatedRecords[existingRecordIndex] = {
-          ...existingRecord,
-          mark_to: formData.mark_to,
-          remarks: formData.remarks,
-          history: newHistory
-        };
-        setRecords(updatedRecords);
         if (error) {
-          toast.error(`Database Error: ${error.message || JSON.stringify(error)}`);
+          toast.error(`Database Error: Data could not be saved. ${error.message || ""}`);
         } else {
+          // Update local state ONLY if DB update was successful
+          const updatedRecords = [...records];
+          updatedRecords[existingRecordIndex] = {
+            ...existingRecord,
+            mark_to: formData.mark_to,
+            remarks: formData.remarks,
+            history: newHistory
+          };
+          setRecords(updatedRecords);
           toast.success(`Detailed log entry added and file forwarded to ${formData.mark_to}`);
         }
       } else {
@@ -525,17 +525,17 @@ export default function FileTracking() {
         const { error } = await supabase.from('file_tracking_records' as any).insert(newEntry);
         dbError = error;
 
-        // Local state
-        const fullEntry = {
-          ...newEntry,
-          mainCategory: formData.mainCategory, // for local UI compatibility
-          subCategory: formData.subCategory, // for local UI compatibility
-          id: Math.random().toString(36).substr(2, 9),
-        };
-        setRecords([fullEntry, ...records]);
         if (error) {
-          toast.error(`Database Error: ${error.message || JSON.stringify(error)}`);
+          toast.error(`Database Error: Entry could not be saved. ${error.message || ""}`);
         } else {
+          // Local state ONLY updated if DB insert was successful
+          const fullEntry = {
+            ...newEntry,
+            mainCategory: formData.mainCategory, // for local UI compatibility
+            subCategory: formData.subCategory, // for local UI compatibility
+            id: Math.random().toString(36).substr(2, 9),
+          };
+          setRecords([fullEntry, ...records]);
           toast.success(`File registered and initial audit log created`);
         }
       }
@@ -686,7 +686,9 @@ export default function FileTracking() {
     { id: 'director_account', name: 'DIRECTOR ACCOUNT' },
     { id: 'director_finance', name: 'DIRECTOR FINANCE' },
     { id: 'director_it', name: 'DIRECTOR IT' },
-    { id: 'sub_cfo', name: 'ASST. CFO' }
+    { id: 'sub_cfo', name: 'ASST. CFO' },
+    { id: 'books', name: 'BOOKS' },
+    { id: 'establishment', name: 'ESTABLISHMENT' }
   ];
 
   // Logic to filter viewable files based on the viewing role
@@ -1722,16 +1724,12 @@ export default function FileTracking() {
                   <SelectTrigger className="bg-muted/20 border-border/50 border-primary/30">
                     <SelectValue placeholder="Target Section" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cfo">CFO</SelectItem>
-                    <SelectItem value="cia">CIA</SelectItem>
-                    <SelectItem value="budget">BUDGET</SelectItem>
-                    <SelectItem value="pension">PENSION</SelectItem>
-                    <SelectItem value="fund">FUND</SelectItem>
-                    <SelectItem value="internal_audit_1">INTERNAL AUDIT-1</SelectItem>
-                    <SelectItem value="director_account">DIRECTOR ACCOUNT</SelectItem>
-                    <SelectItem value="director_finance">DIRECTOR FINANCE</SelectItem>
-                    <SelectItem value="director_it">DIRECTOR IT</SelectItem>
+                  <SelectContent className="bg-zinc-900 border-primary/20 text-white">
+                    {sections.map(section => (
+                      <SelectItem key={section.id} value={section.id} className="font-bold uppercase tracking-tight">
+                        {section.name} {section.id === 'books' || section.id === 'establishment' ? '(NEW)' : ''}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

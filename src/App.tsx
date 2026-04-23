@@ -26,6 +26,8 @@ import Contingencies from "./pages/book-section/Contingencies";
 import ChequeRecord from "./pages/book-section/ChequeRecord";
 import BillDispatch from "./pages/book-section/BillDispatch";
 import FileTracking from "./pages/book-section/FileTracking";
+import Books from "./pages/book-section/Books";
+import Establishment from "./pages/book-section/Establishment";
 import PublicTracking from "./pages/PublicTracking";
 import CpFund from "./pages/regular-employee/CpFund";
 import Placeholder from "./pages/Placeholder";
@@ -77,6 +79,8 @@ const App = () => (
                           <Route path="/book-section/bill-dispatch" element={<BillDispatch />} />
                           <Route path="/book-section/file-tracking" element={<FileTracking />} />
                           <Route path="/book-section/cheque-record" element={<ChequeRecord />} />
+                          <Route path="/book-section/books" element={<Books />} />
+                          <Route path="/book-section/establishment" element={<Establishment />} />
                           <Route path="/regular-employee/cp-fund" element={<CpFund />} />
                           <Route path="/regular-employee/supp-salary" element={<CpFund title="Supp Salary" />} />
                           <Route path="/regular-employee/house-building" element={<CpFund title="House Building" />} />
