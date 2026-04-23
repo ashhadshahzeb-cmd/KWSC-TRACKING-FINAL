@@ -90,10 +90,10 @@ export default function FileTracking() {
   // New Form State
   const [isSavingForm, setIsSavingForm] = useState(false);
   const [formData, setFormData] = useState({
-    cfo_diary_number: `CFO-${new Date().getFullYear()}-${String(Math.floor(1 + Math.random() * 9999)).padStart(4, '0')}`,
+    cfo_diary_number: `CFO-${new Date().getFullYear()}-XXXX`,
     inward_date: new Date().toISOString().split('T')[0],
     received_from: "",
-    receiving_number: `RC-${Math.floor(1000 + Math.random() * 9000)}`,
+    receiving_number: "",
     mainCategory: "",
     subCategory: "",
     subject: "",
@@ -210,125 +210,42 @@ export default function FileTracking() {
     printWindow.document.close();
   };
 
-  // Comprehensive Dummy Data Set for Testing (15+ entries per section)
-  const [records, setRecords] = useState<any[]>([
-    // MEDICAL SECTION (15 entries)
-    { id: "med-1", tracking_id: "FT-MED-101", cfo_diary_number: "CFO-M-01", inward_date: "2024-04-01", received_from: "HR Admin", receiving_number: "RC-M-101", mainCategory: "employee", subCategory: "medical", subject: "Reimbursement for Staff ID 4492", mark_to: "medical", created_at: "2024-04-01T09:00:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "Reimbursement for Staff ID 4492", remarks: "Check OPD claims", signature_data: "", date: "2024-04-01T09:00:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
-    { id: "med-2", tracking_id: "FT-MED-102", cfo_diary_number: "CFO-M-02", inward_date: "2024-04-01", received_from: "Revenue Section", receiving_number: "RC-M-102", mainCategory: "employee", subCategory: "medical", subject: "In-patient bill - Staff ID 5512", mark_to: "medical", created_at: "2024-04-01T10:00:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "In-patient bill - Staff ID 5512", remarks: "Verify surgery costs", signature_data: "", date: "2024-04-01T10:00:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
-    { id: "med-3", tracking_id: "FT-MED-103", cfo_diary_number: "CFO-M-03", inward_date: "2024-04-02", received_from: "Accounts Branch", receiving_number: "RC-M-103", mainCategory: "employee", subCategory: "medical", subject: "Maternity claim - Staff ID 8821", mark_to: "medical", created_at: "2024-04-02T11:00:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "Maternity claim - Staff ID 8821", remarks: "Policy check required", signature_data: "", date: "2024-04-02T11:00:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
-    { id: "med-4", tracking_id: "FT-MED-104", cfo_diary_number: "CFO-M-04", inward_date: "2024-04-02", received_from: "HR Admin", receiving_number: "RC-M-104", mainCategory: "employee", subCategory: "medical", subject: "Emergency treatment - Staff ID 1121", mark_to: "medical", created_at: "2024-04-02T14:30:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "Heart surgery claim", remarks: "Life saving emergency", signature_data: "", date: "2024-04-02T14:30:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
-    { id: "med-5", tracking_id: "FT-MED-105", cfo_diary_number: "CFO-M-05", inward_date: "2024-04-03", received_from: "Revenue Dept", receiving_number: "RC-M-105", mainCategory: "employee", subCategory: "medical", subject: "Optical claim batch - Staff ID 4410", mark_to: "medical", created_at: "2024-04-03T10:15:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "Optical batch claim", remarks: "Standard allowance check", signature_data: "", date: "2024-04-03T10:15:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
-    { id: "med-6", tracking_id: "FT-MED-106", cfo_diary_number: "CFO-M-06", inward_date: "2024-04-03", received_from: "HR Section", receiving_number: "RC-M-106", mainCategory: "employee", subCategory: "medical", subject: "Dental treatment bill - Staff ID 9901", mark_to: "medical", created_at: "2024-04-03T16:00:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "Dental claim", remarks: "Check clinic registration", signature_data: "", date: "2024-04-03T16:00:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
-    { id: "med-7", tracking_id: "FT-MED-107", cfo_diary_number: "CFO-M-07", inward_date: "2024-04-04", received_from: "Accounts Branch", receiving_number: "RC-M-107", mainCategory: "employee", subCategory: "medical", subject: "Mental health session - Staff ID 2210", mark_to: "medical", created_at: "2024-04-04T09:30:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "Continuous support case", remarks: "Monthly allocation case", signature_data: "", date: "2024-04-04T09:30:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
-    { id: "med-8", tracking_id: "FT-MED-108", cfo_diary_number: "CFO-M-08", inward_date: "2024-04-04", received_from: "Revenue Section", receiving_number: "RC-M-108", mainCategory: "employee", subCategory: "medical", subject: "Pharmacy batch Q1 - Multiple staff", mark_to: "medical", created_at: "2024-04-04T12:00:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "Pharmacy batch claim", remarks: "Check prescribed list", signature_data: "", date: "2024-04-04T12:00:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
-    { id: "med-9", tracking_id: "FT-MED-109", cfo_diary_number: "CFO-M-09", inward_date: "2024-04-05", received_from: "HR Admin", receiving_number: "RC-M-109", mainCategory: "employee", subCategory: "medical", subject: "Physio claim - Staff ID 3381", mark_to: "medical", created_at: "2024-04-05T11:00:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "Physiotherapy claim", remarks: "Verify attendance log", signature_data: "", date: "2024-04-05T11:00:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
-    { id: "med-10", tracking_id: "FT-MED-110", cfo_diary_number: "CFO-M-10", inward_date: "2024-04-05", received_from: "Revenue Dept", receiving_number: "RC-M-110", mainCategory: "employee", subCategory: "medical", subject: "Lab test reimbursement - Various staff", mark_to: "medical", created_at: "2024-04-05T15:00:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "Lab test batch", remarks: "Consolidated report check", signature_data: "", date: "2024-04-05T15:00:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
-    { id: "med-11", tracking_id: "FT-MED-111", cfo_diary_number: "CFO-M-11", inward_date: "2024-04-06", received_from: "HR Admin", receiving_number: "RC-M-111", mainCategory: "employee", subCategory: "medical", subject: "Diagnostic scan - Staff ID 7701", mark_to: "medical", created_at: "2024-04-06T09:45:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "MRI Scan claim", remarks: "Emergency diagnostic", signature_data: "", date: "2024-04-06T09:45:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
-    { id: "med-12", tracking_id: "FT-MED-112", cfo_diary_number: "CFO-M-12", inward_date: "2024-04-06", received_from: "Accounts Sect", receiving_number: "RC-M-112", mainCategory: "employee", subCategory: "medical", subject: "Hearing aid claim - Staff ID 5502", mark_to: "medical", created_at: "2024-04-06T14:00:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "Medical appliance claim", remarks: "Check technical approval", signature_data: "", date: "2024-04-06T14:00:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
-    { id: "med-13", tracking_id: "FT-MED-113", cfo_diary_number: "CFO-M-13", inward_date: "2024-04-07", received_from: "HR Admin", receiving_number: "RC-M-113", mainCategory: "employee", subCategory: "medical", subject: "Dialysis batch claim - Chronic cases", mark_to: "medical", created_at: "2024-04-07T10:30:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "Dialysis support batch", remarks: "Standard funding approve", signature_data: "", date: "2024-04-07T10:30:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
-    { id: "med-14", tracking_id: "FT-MED-114", cfo_diary_number: "CFO-M-14", inward_date: "2024-04-07", received_from: "Revenue Section", receiving_number: "RC-M-114", mainCategory: "employee", subCategory: "medical", subject: "Home care medical support - Staff ID 1109", mark_to: "medical", created_at: "2024-04-07T15:45:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "Home care claim", remarks: "Verify medical necessity", signature_data: "", date: "2024-04-07T15:45:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
-    { id: "med-15", tracking_id: "FT-MED-115", cfo_diary_number: "CFO-M-15", inward_date: "2024-04-08", received_from: "Accounts Sect", receiving_number: "RC-M-115", mainCategory: "employee", subCategory: "medical", subject: "Infectious disease claim batch - Q1", mark_to: "medical", created_at: "2024-04-08T09:15:00Z", history: [{ mainCategory: "employee", subCategory: "medical", subject: "Infectious batch claim", remarks: "Health officer sign-off", signature_data: "", date: "2024-04-08T09:15:00Z", processed_by: "CFO Office", mark_to: "medical" }] },
+  const [records, setRecords] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-    // CONTRACTOR SECTION (15 entries)
-    { id: "con-1", tracking_id: "FT-CON-201", cfo_diary_number: "CFO-C-01", inward_date: "2024-04-01", received_from: "Chief Engineer West", receiving_number: "RC-C-201", mainCategory: "contractor", subCategory: "running_bill", subject: "Sewerage Line Work - Korangi Ph 1", mark_to: "contractor", created_at: "2024-04-01T10:00:00Z", history: [{ mainCategory: "contractor", subCategory: "running_bill", subject: "Korangi Ph 1 Bill", remarks: "Verify MB entries", signature_data: "", date: "2024-04-01T10:00:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
-    { id: "con-2", tracking_id: "FT-CON-202", cfo_diary_number: "CFO-C-02", inward_date: "2024-04-01", received_from: "XEN North", receiving_number: "RC-C-202", mainCategory: "contractor", subCategory: "final_bill", subject: "Pipe Replacement - Gulshan Zone B", mark_to: "contractor", created_at: "2024-04-01T14:00:00Z", history: [{ mainCategory: "contractor", subCategory: "final_bill", subject: "Gulshan Zone B Final", remarks: "Final inspection done", signature_data: "", date: "2024-04-01T14:00:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
-    { id: "con-3", tracking_id: "FT-CON-203", cfo_diary_number: "CFO-C-03", inward_date: "2024-04-02", received_from: "SE Central", receiving_number: "RC-C-203", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Release - Project Alpha 2023", mark_to: "contractor", created_at: "2024-04-02T09:00:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Release Case", remarks: "Maint period complete", signature_data: "", date: "2024-04-02T09:00:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
-    { id: "con-4", tracking_id: "FT-CON-204", cfo_diary_number: "CFO-C-04", inward_date: "2024-04-02", received_from: "Project Director", receiving_number: "RC-C-204", mainCategory: "contractor", subCategory: "running_bill", subject: "Bridge Maintenance - Lyari Link", mark_to: "contractor", created_at: "2024-04-02T13:30:00Z", history: [{ mainCategory: "contractor", subCategory: "running_bill", subject: "Lyari Bridge Bill #3", remarks: "Check labor records", signature_data: "", date: "2024-04-02T13:30:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
-    { id: "con-5", tracking_id: "FT-CON-205", cfo_diary_number: "CFO-C-05", inward_date: "2024-04-03", received_from: "Chief Engineer South", receiving_number: "RC-C-205", mainCategory: "contractor", subCategory: "retention_money", subject: "Retention Relief - Water Plant Ph1", mark_to: "contractor", created_at: "2024-04-03T11:00:00Z", history: [{ mainCategory: "contractor", subCategory: "retention_money", subject: "Retention Money Case", remarks: "Audit check passed", signature_data: "", date: "2024-04-03T11:00:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
-    { id: "con-6", tracking_id: "FT-CON-206", cfo_diary_number: "CFO-C-06", inward_date: "2024-04-03", received_from: "XEN West", receiving_number: "RC-C-206", mainCategory: "contractor", subCategory: "running_bill", subject: "Valve Installation - HUB Canal Ph2", mark_to: "contractor", created_at: "2024-04-03T15:45:00Z", history: [{ mainCategory: "contractor", subCategory: "running_bill", subject: "HUB Ph2 Valve Bill", remarks: "Verify parts list", signature_data: "", date: "2024-04-03T15:45:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
-    { id: "con-7", tracking_id: "FT-CON-207", cfo_diary_number: "CFO-C-07", inward_date: "2024-04-04", received_from: "SE East", receiving_number: "RC-C-207", mainCategory: "contractor", subCategory: "final_bill", subject: "Road Restoration - Quaidabad Link 1", mark_to: "contractor", created_at: "2024-04-04T10:20:00Z", history: [{ mainCategory: "contractor", subCategory: "final_bill", subject: "Quaidabad Road Final", remarks: "Compliance verified", signature_data: "", date: "2024-04-04T10:20:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
-    { id: "con-8", tracking_id: "FT-CON-208", cfo_diary_number: "CFO-C-08", inward_date: "2024-04-04", received_from: "CE West", receiving_number: "RC-C-208", mainCategory: "contractor", subCategory: "running_bill", subject: "Filter Plant Cleaning - Pipri Site B", mark_to: "contractor", created_at: "2024-04-04T14:30:00Z", history: [{ mainCategory: "contractor", subCategory: "running_bill", subject: "Pipri Site B Clean Bill", remarks: "Verify chemical log", signature_data: "", date: "2024-04-04T14:30:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
-    { id: "con-9", tracking_id: "FT-CON-209", cfo_diary_number: "CFO-C-09", inward_date: "2024-04-05", received_from: "XEN District East", receiving_number: "RC-C-209", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Release - Street Repair Zone X", mark_to: "contractor", created_at: "2024-04-05T09:15:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Zone X Repair Security", remarks: "Defects rectified", signature_data: "", date: "2024-04-05T09:15:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
-    { id: "con-10", tracking_id: "FT-CON-210", cfo_diary_number: "CFO-C-10", inward_date: "2024-04-05", received_from: "SE North", receiving_number: "RC-C-210", mainCategory: "contractor", subCategory: "running_bill", subject: "Electric Motor Overhaul - Station 5A", mark_to: "contractor", created_at: "2024-04-05T12:00:00Z", history: [{ mainCategory: "contractor", subCategory: "running_bill", subject: "Station 5A Motor Bill", remarks: "Warranty check attached", signature_data: "", date: "2024-04-05T12:00:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
-    { id: "con-11", tracking_id: "FT-CON-211", cfo_diary_number: "CFO-C-11", inward_date: "2024-04-06", received_from: "Project Director", receiving_number: "RC-C-211", mainCategory: "contractor", subCategory: "running_bill", subject: "Dredging Services - Malir River", mark_to: "contractor", created_at: "2024-04-06T10:45:00Z", history: [{ mainCategory: "contractor", subCategory: "running_bill", subject: "Malir Dredging No 2", remarks: "Verify volume report", signature_data: "", date: "2024-04-06T10:45:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
-    { id: "con-12", tracking_id: "FT-CON-212", cfo_diary_number: "CFO-C-12", inward_date: "2024-04-06", received_from: "XEN Workshop", receiving_number: "RC-C-212", mainCategory: "contractor", subCategory: "final_bill", subject: "Crane Lease Settlement - Q1", mark_to: "contractor", created_at: "2024-04-06T15:30:00Z", history: [{ mainCategory: "contractor", subCategory: "final_bill", subject: "Crane Lease Final", remarks: "Check log books", signature_data: "", date: "2024-04-06T15:30:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
-    { id: "con-13", tracking_id: "FT-CON-213", cfo_diary_number: "CFO-C-13", inward_date: "2024-04-07", received_from: "CE East", receiving_number: "RC-C-213", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Release - Water Main G-22", mark_to: "contractor", created_at: "2024-04-07T09:15:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "G-22 Security Case", remarks: "Audit observation clear", signature_data: "", date: "2024-04-07T09:15:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
-    { id: "con-14", tracking_id: "FT-CON-214", cfo_diary_number: "CFO-C-14", inward_date: "2024-04-07", received_from: "SE South", receiving_number: "RC-C-214", mainCategory: "contractor", subCategory: "running_bill", subject: "Fence Installation - Reservoir A", mark_to: "contractor", created_at: "2024-04-07T14:40:00Z", history: [{ mainCategory: "contractor", subCategory: "running_bill", subject: "Reservoir A Fence Bill", remarks: "Check site photos", signature_data: "", date: "2024-04-07T14:40:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
-    { id: "con-15", tracking_id: "FT-CON-215", cfo_diary_number: "CFO-C-15", inward_date: "2024-04-08", received_from: "Chief Engineer", receiving_number: "RC-C-215", mainCategory: "contractor", subCategory: "final_bill", subject: "IT Network Cabling - Admin Block", mark_to: "contractor", created_at: "2024-04-08T11:00:00Z", history: [{ mainCategory: "contractor", subCategory: "final_bill", subject: "IT Cabling Final", remarks: "UAT documentation check", signature_data: "", date: "2024-04-08T11:00:00Z", processed_by: "CFO Office", mark_to: "contractor" }] },
+  const fetchRecords = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('file_tracking_records' as any)
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    // SECURITY DEPOSIT SECTION (15 entries)
-    { id: "sd-1", tracking_id: "FT-SD-301", cfo_diary_number: "CFO-S-01", inward_date: "2024-04-01", received_from: "Contract Branch", receiving_number: "RC-S-301", mainCategory: "contractor", subCategory: "security_deposit", subject: "Retention Relief - Pipe Supply B-1", mark_to: "security_deposit", created_at: "2024-04-01T11:00:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Pipe Supply B-1 Security", remarks: "Wait for final report", signature_data: "", date: "2024-04-01T11:00:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
-    { id: "sd-2", tracking_id: "FT-SD-302", cfo_diary_number: "CFO-S-02", inward_date: "2024-04-01", received_from: "Legal Advisor", receiving_number: "RC-S-302", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Refund - Canceled Tender 88", mark_to: "security_deposit", created_at: "2024-04-01T15:00:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Tender 88 Refund Case", remarks: "Tender canceled officially", signature_data: "", date: "2024-04-01T15:00:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
-    { id: "sd-3", tracking_id: "FT-SD-303", cfo_diary_number: "CFO-S-03", inward_date: "2024-04-02", received_from: "Engineering Cell", receiving_number: "RC-S-303", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Release - Boundary Wall Ph1", mark_to: "security_deposit", created_at: "2024-04-02T10:00:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Boundary Ph1 Security", remarks: "Verify completion doc", signature_data: "", date: "2024-04-02T10:00:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
-    { id: "sd-4", tracking_id: "FT-SD-304", cfo_diary_number: "CFO-S-04", inward_date: "2024-04-02", received_from: "IT Procurement", receiving_number: "RC-S-304", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Refund - Server Supply Q2", mark_to: "security_deposit", created_at: "2024-04-02T14:00:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Server Supply Security", remarks: "Check technical report", signature_data: "", date: "2024-04-02T14:00:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
-    { id: "sd-5", tracking_id: "FT-SD-305", cfo_diary_number: "CFO-S-05", inward_date: "2024-04-03", received_from: "XEN Workshop", receiving_number: "RC-S-305", mainCategory: "contractor", subCategory: "security_deposit", subject: "Retention Money - Site Crane B-4", mark_to: "security_deposit", created_at: "2024-04-03T09:30:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Crane B-4 Security Case", remarks: "Verify maintenance log", signature_data: "", date: "2024-04-03T09:30:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
-    { id: "sd-6", tracking_id: "FT-SD-306", cfo_diary_number: "CFO-S-06", inward_date: "2024-04-03", received_from: "PD HUB Canal", receiving_number: "RC-S-306", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Release - Dam Repair Ph 3", mark_to: "security_deposit", created_at: "2024-04-03T12:00:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Dam Ph3 Security", remarks: "Structural sign-off attached", signature_data: "", date: "2024-04-03T12:00:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
-    { id: "sd-7", tracking_id: "FT-SD-307", cfo_diary_number: "CFO-S-07", inward_date: "2024-04-04", received_from: "CE East Cell", receiving_number: "RC-S-307", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Refund - Valve Supply 2024", mark_to: "security_deposit", created_at: "2024-04-04T10:45:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Valve Supply Security Case", remarks: "Matched store receipts", signature_data: "", date: "2024-04-04T10:45:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
-    { id: "sd-8", tracking_id: "FT-SD-308", cfo_diary_number: "CFO-S-08", inward_date: "2024-04-04", received_from: "Legal Advisor", receiving_number: "RC-S-308", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Release - Court Case X-221", mark_to: "security_deposit", created_at: "2024-04-04T15:30:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Court Case Security", remarks: "Legal clearance verified", signature_data: "", date: "2024-04-04T15:30:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
-    { id: "sd-9", tracking_id: "FT-SD-309", cfo_diary_number: "CFO-S-09", inward_date: "2024-04-05", received_from: "Admin Procurement", receiving_number: "RC-S-309", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Refund - Lab Equipment Unit", mark_to: "security_deposit", created_at: "2024-04-05T11:15:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Lab Supply Security", remarks: "Checking warranty status", signature_data: "", date: "2024-04-05T11:15:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
-    { id: "sd-10", tracking_id: "FT-SD-310", cfo_diary_number: "CFO-S-10", inward_date: "2024-04-05", received_from: "Accounts Branch", receiving_number: "RC-S-310", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Release - Guard Services Ph A", mark_to: "security_deposit", created_at: "2024-04-05T16:00:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Guard Service Security", remarks: "Full settlement sign-off", signature_data: "", date: "2024-04-05T16:00:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
-    { id: "sd-11", tracking_id: "FT-SD-311", cfo_diary_number: "CFO-S-11", inward_date: "2024-04-06", received_from: "XEN Workshop", receiving_number: "RC-S-311", mainCategory: "contractor", subCategory: "security_deposit", subject: "Retention Relief - Fleet Maintenance", mark_to: "security_deposit", created_at: "2024-04-06T10:00:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Fleet Security Release", remarks: "Maint phase complete", signature_data: "", date: "2024-04-06T10:00:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
-    { id: "sd-12", tracking_id: "FT-SD-312", cfo_diary_number: "CFO-S-12", inward_date: "2024-04-06", received_from: "PD Filtration", receiving_number: "RC-S-312", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Release - Pipeline Coating", mark_to: "security_deposit", created_at: "2024-04-06T13:30:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Coating Sec Release", remarks: "Check technical audit", signature_data: "", date: "2024-04-06T13:30:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
-    { id: "sd-13", tracking_id: "FT-SD-313", cfo_diary_number: "CFO-S-13", inward_date: "2024-04-07", received_from: "Engineering Branch", receiving_number: "RC-S-313", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Release - Roof Repair Batch 1", mark_to: "security_deposit", created_at: "2024-04-07T09:45:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Roof Sec Release", remarks: "Check leak-proof report", signature_data: "", date: "2024-04-07T09:45:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
-    { id: "sd-14", tracking_id: "FT-SD-314", cfo_diary_number: "CFO-S-14", inward_date: "2024-04-07", received_from: "IT Section", receiving_number: "RC-S-314", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Refund - Software Dev Sec", mark_to: "security_deposit", created_at: "2024-04-07T12:00:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Software Sec Release", remarks: "Check source code hand-over", signature_data: "", date: "2024-04-07T12:00:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
-    { id: "sd-15", tracking_id: "FT-SD-315", cfo_diary_number: "CFO-S-15", inward_date: "2024-04-08", received_from: "Legal Branch", receiving_number: "RC-S-315", mainCategory: "contractor", subCategory: "security_deposit", subject: "Security Refund - Bond Case 4492", mark_to: "security_deposit", created_at: "2024-04-08T10:15:00Z", history: [{ mainCategory: "contractor", subCategory: "security_deposit", subject: "Bond Refund Case", remarks: "Bond period elapsed", signature_data: "", date: "2024-04-08T10:15:00Z", processed_by: "CFO Office", mark_to: "security_deposit" }] },
+      if (error) {
+        console.warn("Table file_tracking_records not found or error:", error);
+        return;
+      }
+      
+      if (data) {
+        // Map database fields to component state fields
+        const mappedData = data.map((item: any) => ({
+          ...item,
+          mainCategory: item.main_category || item.mainCategory || 'general',
+          subCategory: item.sub_category || item.subCategory || 'others',
+        }));
+        setRecords(mappedData);
+      }
+    } catch (err) {
+      console.error("Error fetching records:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    // POL BILLS SECTION (15 entries)
-    { id: "pol-1", tracking_id: "FT-POL-401", cfo_diary_number: "CFO-P-01", inward_date: "2024-04-01", received_from: "Transport Cell", receiving_number: "RC-P-401", mainCategory: "others", subCategory: "pol_bills", subject: "Fuel reimbursement - March week 1", mark_to: "pol_bills", created_at: "2024-04-01T12:00:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "March Fuel week 1", remarks: "Check vehicle log", signature_data: "", date: "2024-04-01T12:00:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-    { id: "pol-2", tracking_id: "FT-POL-402", cfo_diary_number: "CFO-P-02", inward_date: "2024-04-01", received_from: "Security Dept", receiving_number: "RC-P-402", mainCategory: "others", subCategory: "pol_bills", subject: "Diesel diesel - Station 2 Generator", mark_to: "pol_bills", created_at: "2024-04-01T16:30:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "Generator Diesel Case", remarks: "Check outage report", signature_data: "", date: "2024-04-01T16:30:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-    { id: "pol-3", tracking_id: "FT-POL-403", cfo_diary_number: "CFO-P-03", inward_date: "2024-04-02", received_from: "Workshop South", receiving_number: "RC-P-403", mainCategory: "others", subCategory: "pol_bills", subject: "Lubricant batch supply - April", mark_to: "pol_bills", created_at: "2024-04-02T11:00:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "Lubricant Bill Case", remarks: "Matched stock entry", signature_data: "", date: "2024-04-02T11:00:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-    { id: "pol-4", tracking_id: "FT-POL-404", cfo_diary_number: "CFO-P-04", inward_date: "2024-04-02", received_from: "Fleet Admin", receiving_number: "RC-P-404", mainCategory: "others", subCategory: "pol_bills", subject: "Tyre replacement batch - Fleet Z", mark_to: "pol_bills", created_at: "2024-04-02T15:20:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "Fleet Tyre Case", remarks: "Inspected by workshop", signature_data: "", date: "2024-04-02T15:20:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-    { id: "pol-5", tracking_id: "FT-POL-405", cfo_diary_number: "CFO-P-05", inward_date: "2024-04-03", received_from: "Project Director HUB", receiving_number: "RC-P-405", mainCategory: "others", subCategory: "pol_bills", subject: "Site fuel supply - Heavy Site B", mark_to: "pol_bills", created_at: "2024-04-03T10:00:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "Site Fuel Case B", remarks: "Check site log books", signature_data: "", date: "2024-04-03T10:00:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-    { id: "pol-6", tracking_id: "FT-POL-406", cfo_diary_number: "CFO-P-06", inward_date: "2024-04-03", received_from: "Transport Office", receiving_number: "RC-P-406", mainCategory: "others", subCategory: "pol_bills", subject: "Repair and Oil change - Staff Bus 4", mark_to: "pol_bills", created_at: "2024-04-03T14:40:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "Staff Bus Maint", remarks: "Verify job card", signature_data: "", date: "2024-04-03T14:40:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-    { id: "pol-7", tracking_id: "FT-POL-407", cfo_diary_number: "CFO-P-07", inward_date: "2024-04-04", received_from: "Security Branch", receiving_number: "RC-P-407", mainCategory: "others", subCategory: "pol_bills", subject: "Petrol for Security Bikes March week 4", mark_to: "pol_bills", created_at: "2024-04-04T09:15:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "Bike Fuel Case", remarks: "Matched route logs", signature_data: "", date: "2024-04-04T09:15:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-    { id: "pol-8", tracking_id: "FT-POL-408", cfo_diary_number: "CFO-P-08", inward_date: "2024-04-04", received_from: "XEN Workshop", receiving_number: "RC-P-408", mainCategory: "others", subCategory: "pol_bills", subject: "Hydraulic oil supply - Workshop Bulk", mark_to: "pol_bills", created_at: "2024-04-04T12:30:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "Hydraulic Oil Bill", remarks: "Verify gate pass", signature_data: "", date: "2024-04-04T12:30:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-    { id: "pol-9", tracking_id: "FT-POL-409", cfo_diary_number: "CFO-P-09", inward_date: "2024-04-05", received_from: "Transport Cell", receiving_number: "RC-P-409", mainCategory: "others", subCategory: "pol_bills", subject: "Tyre patch batch - Service Center", mark_to: "pol_bills", created_at: "2024-04-05T10:45:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "Tyre Patch Case", remarks: "Matched receipts", signature_data: "", date: "2024-04-05T10:45:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-    { id: "pol-10", tracking_id: "FT-POL-410", cfo_diary_number: "CFO-P-10", inward_date: "2024-04-05", received_from: "HR Section", receiving_number: "RC-P-410", mainCategory: "others", subCategory: "pol_bills", subject: "Weekly Fuel - Staff Shuttle A", mark_to: "pol_bills", created_at: "2024-04-05T15:20:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "Approve for week 2", remarks: "Matched weekly log", signature_data: "", date: "2024-04-05T15:20:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-    { id: "pol-11", tracking_id: "FT-POL-411", cfo_diary_number: "CFO-P-11", inward_date: "2024-04-06", received_from: "Security Dept", receiving_number: "RC-P-411", mainCategory: "others", subCategory: "pol_bills", subject: "Lubricant - Station 4 Genset", mark_to: "pol_bills", created_at: "2024-04-06T09:00:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "Genset Lubricant Case", remarks: "Check technical sign", signature_data: "", date: "2024-04-06T09:00:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-    { id: "pol-12", tracking_id: "FT-POL-412", cfo_diary_number: "CFO-P-12", inward_date: "2024-04-06", received_from: "Site Supervisor", receiving_number: "RC-P-412", mainCategory: "others", subCategory: "pol_bills", subject: "Fuel reimbursement - Site Vehicle 11", mark_to: "pol_bills", created_at: "2024-04-06T13:45:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "Site Vehicle Fuel", remarks: "Matched site log", signature_data: "", date: "2024-04-06T13:45:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-    { id: "pol-13", tracking_id: "FT-POL-413", cfo_diary_number: "CFO-P-13", inward_date: "2024-04-07", received_from: "Transport Office", receiving_number: "RC-P-413", mainCategory: "others", subCategory: "pol_bills", subject: "Brake oil supply - Q2 Batch", mark_to: "pol_bills", created_at: "2024-04-07T10:15:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "Brake Oil Case", remarks: "Matched store ledger", signature_data: "", date: "2024-04-07T10:15:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-    { id: "pol-14", tracking_id: "FT-POL-414", cfo_diary_number: "CFO-P-14", inward_date: "2024-04-07", received_from: "Fleet Admin", receiving_number: "RC-P-414", mainCategory: "others", subCategory: "pol_bills", subject: "Suspension parts reimbursement - Tanker B", mark_to: "pol_bills", created_at: "2024-04-07T15:20:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "Tanker B Maint Bill", remarks: "Verify workshop sign", signature_data: "", date: "2024-04-07T15:20:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-    { id: "pol-15", tracking_id: "FT-POL-415", cfo_diary_number: "CFO-P-15", inward_date: "2024-04-08", received_from: "Transport Office", receiving_number: "RC-P-415", mainCategory: "others", subCategory: "pol_bills", subject: "Radiator coolant supply batch 1", mark_to: "pol_bills", created_at: "2024-04-08T09:45:00Z", history: [{ mainCategory: "others", subCategory: "pol_bills", subject: "Coolant Batch Case", remarks: "Verify quality cert", signature_data: "", date: "2024-04-08T09:45:00Z", processed_by: "CFO Office", mark_to: "pol_bills" }] },
-
-    // CONTINGENCIES SECTION (15 entries)
-    { id: "cnt-c1", tracking_id: "FT-CT-501", cfo_diary_number: "CFO-T-01", inward_date: "2024-04-01", received_from: "General Admin", receiving_number: "RC-T-501", mainCategory: "others", subCategory: "contingencies", subject: "Office Stationery Batch #9", mark_to: "contingencies", created_at: "2024-04-01T13:00:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "Stationery Bill Mar", remarks: "Matched budget head", signature_data: "", date: "2024-04-01T13:00:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-    { id: "cnt-c2", tracking_id: "FT-CT-502", cfo_diary_number: "CFO-T-02", inward_date: "2024-04-01", received_from: "IT Cell", receiving_number: "RC-T-502", mainCategory: "others", subCategory: "contingencies", subject: "Internet Bill - April 2024", mark_to: "contingencies", created_at: "2024-04-01T17:15:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "IT Internet Bill", remarks: "Verify uptime report", signature_data: "", date: "2024-04-01T17:15:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-    { id: "cnt-c3", tracking_id: "FT-CT-503", cfo_diary_number: "CFO-T-03", inward_date: "2024-04-02", received_from: "Security Section", receiving_number: "RC-T-503", mainCategory: "others", subCategory: "contingencies", subject: "Uniform supply - Duty Staff Ph 2", mark_to: "contingencies", created_at: "2024-04-02T10:45:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "Uniform Ph2 Bill", remarks: "Check sample quality", signature_data: "", date: "2024-04-02T10:45:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-    { id: "cnt-c4", tracking_id: "FT-CT-504", cfo_diary_number: "CFO-T-04", inward_date: "2024-04-02", received_from: "Admin Branch", receiving_number: "RC-T-504", mainCategory: "others", subCategory: "contingencies", subject: "Water cooler repairs - Zone C", mark_to: "contingencies", created_at: "2024-04-02T14:15:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "Zone C Cooler Repair", remarks: "Confirm work done", signature_data: "", date: "2024-04-02T14:15:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-    { id: "cnt-c5", tracking_id: "FT-CT-505", cfo_diary_number: "CFO-T-05", inward_date: "2024-04-03", received_from: "Accounts Branch", receiving_number: "RC-T-505", mainCategory: "others", subCategory: "contingencies", subject: "Tea and Snacks - Board Meeting 4", mark_to: "contingencies", created_at: "2024-04-03T11:30:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "Board Meeting Meal", remarks: "Approved by Secretary", signature_data: "", date: "2024-04-03T11:30:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-    { id: "cnt-c6", tracking_id: "FT-CT-506", cfo_diary_number: "CFO-T-06", inward_date: "2024-04-03", received_from: "IT Helpdesk", receiving_number: "RC-T-506", mainCategory: "others", subCategory: "contingencies", subject: "Network switch repair - Admin B", mark_to: "contingencies", created_at: "2024-04-03T15:20:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "IT Switch Repair", remarks: "Verify job status", signature_data: "", date: "2024-04-03T15:20:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-    { id: "cnt-c7", tracking_id: "FT-CT-507", cfo_diary_number: "CFO-T-07", inward_date: "2024-04-04", received_from: "General Admin", receiving_number: "RC-T-507", mainCategory: "others", subCategory: "contingencies", subject: "Cleaning spray batch - Head Office", mark_to: "contingencies", created_at: "2024-04-04T09:40:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "Cleaning Batch Case", remarks: "Matched quote rates", signature_data: "", date: "2024-04-04T09:40:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-    { id: "cnt-c8", tracking_id: "FT-CT-508", cfo_diary_number: "CFO-T-08", inward_date: "2024-04-04", received_from: "Information Office", receiving_number: "RC-T-508", mainCategory: "others", subCategory: "contingencies", subject: "Media subscription - Q2 2024", mark_to: "contingencies", created_at: "2024-04-04T13:45:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "Subscription Case", remarks: "Verify media list", signature_data: "", date: "2024-04-04T13:45:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-    { id: "cnt-c9", tracking_id: "FT-CT-509", cfo_diary_number: "CFO-T-09", inward_date: "2024-04-05", received_from: "Engineering", receiving_number: "RC-T-509", mainCategory: "others", subCategory: "contingencies", subject: "Survey tool calibration - Site A", mark_to: "contingencies", created_at: "2024-04-05T10:00:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "Calibration Case", remarks: "Check technical cert", signature_data: "", date: "2024-04-05T10:00:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-    { id: "cnt-c10", tracking_id: "FT-CT-510", cfo_diary_number: "CFO-T-10", inward_date: "2024-04-05", received_from: "Security Branch", receiving_number: "RC-T-510", mainCategory: "others", subCategory: "contingencies", subject: "CCTV camera cable replacement - Gate 1", mark_to: "contingencies", created_at: "2024-04-05T14:30:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "Security Cable Bill", remarks: "Verify work done", signature_data: "", date: "2024-04-05T14:30:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-    { id: "cnt-c11", tracking_id: "FT-CT-511", cfo_diary_number: "CFO-T-11", inward_date: "2024-04-06", received_from: "Admin Cell", receiving_number: "RC-T-511", mainCategory: "others", subCategory: "contingencies", subject: "Printing paper batch - Q1 Audit", mark_to: "contingencies", created_at: "2024-04-06T09:15:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "Audit Paper Case", remarks: "Matched stock code", signature_data: "", date: "2024-04-06T09:15:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-    { id: "cnt-c12", tracking_id: "FT-CT-512", cfo_diary_number: "CFO-T-12", inward_date: "2024-04-06", received_from: "Workshop Cell", receiving_number: "RC-T-512", mainCategory: "others", subCategory: "contingencies", subject: "Welding rod supply - Site Workshop", mark_to: "contingencies", created_at: "2024-04-06T13:00:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "Welding Supply Case", remarks: "Matched store GRN", signature_data: "", date: "2024-04-06T13:00:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-    { id: "cnt-c13", tracking_id: "FT-CT-513", cfo_diary_number: "CFO-T-13", inward_date: "2024-04-07", received_from: "IT Cell", receiving_number: "RC-T-513", mainCategory: "others", subCategory: "contingencies", subject: "UPS battery replacement - Server Room", mark_to: "contingencies", created_at: "2024-04-07T10:45:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "Server UPS Case", remarks: "Check technical report", signature_data: "", date: "2024-04-07T10:45:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-    { id: "cnt-c14", tracking_id: "FT-CT-514", cfo_diary_number: "CFO-T-14", inward_date: "2024-04-07", received_from: "General Admin", receiving_number: "RC-T-514", mainCategory: "others", subCategory: "contingencies", subject: "Staff ID card printing - Batch 2024", mark_to: "contingencies", created_at: "2024-04-07T15:15:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "ID Card Print Case", remarks: "Verify quantity", signature_data: "", date: "2024-04-07T15:15:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-    { id: "cnt-c15", tracking_id: "FT-CT-515", cfo_diary_number: "CFO-T-15", inward_date: "2024-04-08", received_from: "Accounts Branch", receiving_number: "RC-T-515", mainCategory: "others", subCategory: "contingencies", subject: "Legal advisor fee - Case A-41 settlement", mark_to: "contingencies", created_at: "2024-04-08T09:45:00Z", history: [{ mainCategory: "others", subCategory: "contingencies", subject: "Legal Fee Case", remarks: "Legal clearance attached", signature_data: "", date: "2024-04-08T09:45:00Z", processed_by: "CFO Office", mark_to: "contingencies" }] },
-
-    // CIA SECTION
-    { id: "cia-1", tracking_id: "FT-CIA-601", cfo_diary_number: "CFO-CIA-01", inward_date: "2024-04-10", received_from: "Audit Cell", receiving_number: "RC-CIA-601", mainCategory: "others", subCategory: "audit", subject: "Pre-audit of Revenue Collection", mark_to: "cia", created_at: "2024-04-10T10:00:00Z", history: [{ mainCategory: "others", subCategory: "audit", subject: "Revenue Audit", remarks: "For verification", signature_data: "", date: "2024-04-10T10:00:00Z", processed_by: "CFO Office", mark_to: "cia" }] },
-    { id: "cia-2", tracking_id: "FT-CIA-602", cfo_diary_number: "CFO-CIA-02", inward_date: "2024-04-11", received_from: "Technical Branch", receiving_number: "RC-CIA-602", mainCategory: "contractor", subCategory: "final_bill", subject: "Technical Audit - HUB Project", mark_to: "cia", created_at: "2024-04-11T11:30:00Z", history: [{ mainCategory: "contractor", subCategory: "final_bill", subject: "HUB Project Audit", remarks: "Please review findings", signature_data: "", date: "2024-04-11T11:30:00Z", processed_by: "CFO Office", mark_to: "cia" }] },
-
-    // BUDGET SECTION
-    { id: "bud-1", tracking_id: "FT-BUD-701", cfo_diary_number: "CFO-BUD-01", inward_date: "2024-04-12", received_from: "Finance Branch", receiving_number: "RC-BUD-701", mainCategory: "others", subCategory: "budget", subject: "Allocation for Q4 Emergency Fund", mark_to: "budget", created_at: "2024-04-12T09:00:00Z", history: [{ mainCategory: "others", subCategory: "budget", subject: "Q4 Fund Allocation", remarks: "Check budget ceilings", signature_data: "", date: "2024-04-12T09:00:00Z", processed_by: "CFO Office", mark_to: "budget" }] },
-    { id: "bud-2", tracking_id: "FT-BUD-702", cfo_diary_number: "CFO-BUD-02", inward_date: "2024-04-13", received_from: "CE West", receiving_number: "RC-BUD-702", mainCategory: "others", subCategory: "budget", subject: "Tender Budget Verification - Pipe Line X", mark_to: "budget", created_at: "2024-04-13T14:00:00Z", history: [{ mainCategory: "others", subCategory: "budget", subject: "Verification Case", remarks: "Sufficient funds available", signature_data: "", date: "2024-04-13T14:00:00Z", processed_by: "CFO Office", mark_to: "budget" }] },
-
-    // PENSION SECTION
-    { id: "pen-1", tracking_id: "FT-PEN-801", cfo_diary_number: "CFO-PEN-01", inward_date: "2024-04-14", received_from: "HR Admin", receiving_number: "RC-PEN-801", mainCategory: "employee", subCategory: "pension", subject: "Commutation Case - Staff ID 1120", mark_to: "pension", created_at: "2024-04-14T10:00:00Z", history: [{ mainCategory: "employee", subCategory: "pension", subject: "Commutation Payout", remarks: "Service book verified", signature_data: "", date: "2024-04-14T10:00:00Z", processed_by: "CFO Office", mark_to: "pension" }] },
-    { id: "pen-2", tracking_id: "FT-PEN-802", cfo_diary_number: "CFO-PEN-02", inward_date: "2024-04-15", received_from: "Welfare Cell", receiving_number: "RC-PEN-802", mainCategory: "employee", subCategory: "pension", subject: "Family Pension Claim - Late Staff 992", mark_to: "pension", created_at: "2024-04-15T15:30:00Z", history: [{ mainCategory: "employee", subCategory: "pension", subject: "Family Pension", remarks: "Succession doc check", signature_data: "", date: "2024-04-15T15:30:00Z", processed_by: "CFO Office", mark_to: "pension" }] },
-
-    // FUND SECTION
-    { id: "fnd-1", tracking_id: "FT-FND-901", cfo_diary_number: "CFO-FND-01", inward_date: "2024-04-12", received_from: "Accounts Branch", receiving_number: "RC-FND-901", mainCategory: "employee", subCategory: "fund", subject: "GP-Fund Withdrawal - Staff ID 3381", mark_to: "fund", created_at: "2024-04-12T11:00:00Z", history: [{ mainCategory: "employee", subCategory: "fund", subject: "GPF Refund", remarks: "Check ledger balance", signature_data: "", date: "2024-04-12T11:00:00Z", processed_by: "CFO Office", mark_to: "fund" }] },
-    { id: "fnd-2", tracking_id: "FT-FND-902", cfo_diary_number: "CFO-FND-02", inward_date: "2024-04-13", received_from: "Fund Management", receiving_number: "RC-FND-902", mainCategory: "others", subCategory: "investments", subject: "Dividend Income - Q1 2024", mark_to: "fund", created_at: "2024-04-13T16:00:00Z", history: [{ mainCategory: "others", subCategory: "investments", subject: "Dividend Entry", remarks: "Bank scroll matched", signature_data: "", date: "2024-04-13T16:00:00Z", processed_by: "CFO Office", mark_to: "fund" }] },
-
-    // INTERNAL AUDIT-1 SECTION
-    { id: "ia1-1", tracking_id: "FT-IA1-1001", cfo_diary_number: "CFO-IA1-01", inward_date: "2024-04-14", received_from: "Workshop Cell", receiving_number: "RC-IA1-1001", mainCategory: "others", subCategory: "audit", subject: "Internal Audit of Spare Parts Stock", mark_to: "internal_audit_1", created_at: "2024-04-14T09:00:00Z", history: [{ mainCategory: "others", subCategory: "audit", subject: "Stock Audit", remarks: "Physical verification done", signature_data: "", date: "2024-04-14T09:00:00Z", processed_by: "CFO Office", mark_to: "internal_audit_1" }] },
-    { id: "ia1-2", tracking_id: "FT-IA1-1002", cfo_diary_number: "CFO-IA1-02", inward_date: "2024-04-15", received_from: "Transport Cell", receiving_number: "RC-IA1-1002", mainCategory: "others", subCategory: "audit", subject: "Audit of Diesel Consumption Log", mark_to: "internal_audit_1", created_at: "2024-04-15T13:45:00Z", history: [{ mainCategory: "others", subCategory: "audit", subject: "Fuel Audit", remarks: "Matched with GPS logs", signature_data: "", date: "2024-04-15T13:45:00Z", processed_by: "CFO Office", mark_to: "internal_audit_1" }] },
-
-    // DIRECTOR ACCOUNT SECTION
-    { id: "da-1", tracking_id: "FT-DA-1101", cfo_diary_number: "CFO-DA-01", inward_date: "2024-04-10", received_from: "Revenue Section", receiving_number: "RC-DA-1101", mainCategory: "others", subCategory: "accounts", subject: "Monthly Reconciliation Report - March", mark_to: "director_account", created_at: "2024-04-10T10:30:00Z", history: [{ mainCategory: "others", subCategory: "accounts", subject: "March Reconciliation", remarks: "Review differences", signature_data: "", date: "2024-04-10T10:30:00Z", processed_by: "CFO Office", mark_to: "director_account" }] },
-    { id: "da-2", tracking_id: "FT-DA-1102", cfo_diary_number: "CFO-DA-02", inward_date: "2024-04-11", received_from: "Finance Cell", receiving_number: "RC-DA-1102", mainCategory: "others", subCategory: "accounts", subject: "Subsidy Claim from Government", mark_to: "director_account", created_at: "2024-04-11T16:15:00Z", history: [{ mainCategory: "others", subCategory: "accounts", subject: "Government Subsidy", remarks: "Attached gazette notice", signature_data: "", date: "2024-04-11T16:15:00Z", processed_by: "CFO Office", mark_to: "director_account" }] },
-
-    // DIRECTOR FINANCE SECTION
-    { id: "df-1", tracking_id: "FT-DF-1201", cfo_diary_number: "CFO-DF-01", inward_date: "2024-04-12", received_from: "Strategic Planning", receiving_number: "RC-DF-1201", mainCategory: "others", subCategory: "finance", subject: "Financial Outlook 2025-2026", mark_to: "director_finance", created_at: "2024-04-12T11:00:00Z", history: [{ mainCategory: "others", subCategory: "finance", subject: "5 Year Plan Finance", remarks: "For policy review", signature_data: "", date: "2024-04-12T11:00:00Z", processed_by: "CFO Office", mark_to: "director_finance" }] },
-    { id: "df-2", tracking_id: "FT-DF-1202", cfo_diary_number: "CFO-DF-02", inward_date: "2024-04-13", received_from: "Commercial Cell", receiving_number: "RC-DF-1202", mainCategory: "others", subCategory: "finance", subject: "New Billing Strategy Approval", mark_to: "director_finance", created_at: "2024-04-13T15:20:00Z", history: [{ mainCategory: "others", subCategory: "finance", subject: "Commercial Strategy", remarks: "ROI analysis attached", signature_data: "", date: "2024-04-13T15:20:00Z", processed_by: "CFO Office", mark_to: "director_finance" }] },
-
-    // CFO SECTION (Direct markings)
-    { id: "cfo-1", tracking_id: "FT-CFO-1301", cfo_diary_number: "CFO-MSG-01", inward_date: "2024-04-16", received_from: "MD Secretariat", receiving_number: "RC-CFO-1301", mainCategory: "others", subCategory: "general", subject: "Urgent Policy Review Request", mark_to: "cfo", created_at: "2024-04-16T09:00:00Z", history: [{ mainCategory: "others", subCategory: "general", subject: "Urgent Review", remarks: "MD directed", signature_data: "", date: "2024-04-16T09:00:00Z", processed_by: "MD Office", mark_to: "cfo" }] },
-    { id: "cfo-2", tracking_id: "FT-CFO-1302", cfo_diary_number: "CFO-MSG-02", inward_date: "2024-04-16", received_from: "Legal Branch", receiving_number: "RC-CFO-1302", mainCategory: "others", subCategory: "legal", subject: "Final Signature - Lease Deed 409", mark_to: "cfo", created_at: "2024-04-16T11:00:00Z", history: [{ mainCategory: "others", subCategory: "legal", subject: "Lease Deed", remarks: "Legal cleared", signature_data: "", date: "2024-04-16T11:00:00Z", processed_by: "Legal Cell", mark_to: "cfo" }] },
-  ]);
+  useEffect(() => {
+    fetchRecords();
+    handleFormReset(); // Fetch initial sequential diary number
+  }, []);
 
   /* 
     SUPABASE SQL SCHEMA FOR file_tracking_records:
@@ -438,12 +355,21 @@ export default function FileTracking() {
     others: ["POL Bills", "Contingencies", "Legal", "Books/Registers", "General / Miscellaneous"]
   };
 
-  const handleFormReset = () => {
+  const handleFormReset = async () => {
+    // Fetch next sequential diary number from database for preview
+    let nextDiaryNo = `CFO-${new Date().getFullYear()}-XXXX`;
+    try {
+      const { data, error } = await supabase.rpc('get_next_cfo_diary_number');
+      if (!error && data) nextDiaryNo = data;
+    } catch (err) {
+      console.error("Error fetching next diary number:", err);
+    }
+
     setFormData({
-      cfo_diary_number: `CFO-${new Date().getFullYear()}-${String(Math.floor(1 + Math.random() * 9999)).padStart(4, '0')}`,
+      cfo_diary_number: nextDiaryNo,
       inward_date: new Date().toISOString().split('T')[0],
       received_from: "",
-      receiving_number: `RC-${Math.floor(1000 + Math.random() * 9000)}`,
+      receiving_number: "", // Now optional and empty by default
       mainCategory: "",
       subCategory: "",
       subject: "",
@@ -457,13 +383,17 @@ export default function FileTracking() {
   };
 
   const handleSaveForm = async () => {
-    if (!formData.cfo_diary_number || !formData.received_from || !formData.receiving_number || !formData.subject || !formData.mainCategory || !formData.subCategory || !formData.mark_to) {
+    // receiving_number is now optional
+    if (!formData.cfo_diary_number || !formData.received_from || !formData.subject || !formData.mainCategory || !formData.subCategory || !formData.mark_to) {
       toast.error("Please fill all required fields");
       return;
     }
     setIsSavingForm(true);
     try {
-      const existingRecordIndex = records.findIndex(r => r.receiving_number === formData.receiving_number);
+      let existingRecordIndex = -1;
+      if (formData.receiving_number && formData.receiving_number.trim() !== "") {
+        existingRecordIndex = records.findIndex(r => r.receiving_number === formData.receiving_number);
+      }
 
       let dbError = null;
 
@@ -475,6 +405,12 @@ export default function FileTracking() {
       };
 
       if (isForwardingMode) {
+        if (!formData.receiving_number || formData.receiving_number.trim() === "") {
+          toast.error("Receiving number is required for forwarding a record.");
+          setIsSavingForm(false);
+          return;
+        }
+
         if (existingRecordIndex === -1) {
           toast.error("Original record not found for forwarding. Please verify the receiving number.");
           setIsSavingForm(false);
@@ -522,7 +458,7 @@ export default function FileTracking() {
       } else {
         // Creating fresh record
         if (existingRecordIndex !== -1) {
-          toast.error("This Receiving Number already exists! Please use a unique number for new registration.");
+          toast.error("This Receiving Number already exists! Please use a unique number or leave it empty.");
           setIsSavingForm(false);
           return;
         }
@@ -530,10 +466,11 @@ export default function FileTracking() {
         const trackingId = `FT-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
         const newEntry = {
           tracking_id: trackingId,
-          cfo_diary_number: formData.cfo_diary_number,
+          // cfo_diary_number is handled by DB default trigger if we pass it as it is or omit it
+          cfo_diary_number: formData.cfo_diary_number.includes('XXXX') ? undefined : formData.cfo_diary_number, 
           inward_date: formData.inward_date,
           received_from: formData.received_from,
-          receiving_number: formData.receiving_number,
+          receiving_number: formData.receiving_number || null,
           main_category: formData.mainCategory,
           sub_category: formData.subCategory,
           subject: formData.subject,
@@ -546,22 +483,28 @@ export default function FileTracking() {
           created_at: new Date().toISOString()
         };
 
-        const { error } = await supabase.from('file_tracking_records' as any).insert(newEntry);
+        const { data: savedData, error } = await supabase
+          .from('file_tracking_records' as any)
+          .insert(newEntry)
+          .select()
+          .single();
+
         dbError = error;
 
         if (error) {
           toast.error(`Database Error: Entry could not be saved. ${error.message || ""}`);
         } else {
-          // Local state ONLY updated if DB insert was successful
+          // Use the actual diary number returned from the database
+          const actualEntry = savedData || newEntry;
           const fullEntry = {
-            ...newEntry,
-            mainCategory: formData.mainCategory,
-            subCategory: formData.subCategory,
-            id: Math.random().toString(36).substr(2, 9),
+            ...actualEntry,
+            mainCategory: actualEntry.main_category || formData.mainCategory,
+            subCategory: actualEntry.sub_category || formData.subCategory,
+            id: actualEntry.id || Math.random().toString(36).substr(2, 9),
           };
           setRecords([fullEntry, ...records]);
-          toast.success(`File registered and initial audit log created`);
-          setQrFullScreen({ diary: formData.cfo_diary_number, receiving: formData.receiving_number });
+          toast.success(`File registered with Diary No: ${actualEntry.cfo_diary_number}`);
+          setQrFullScreen({ diary: actualEntry.cfo_diary_number, receiving: actualEntry.receiving_number || "N/A" });
           handleFormReset();
         }
       }
@@ -613,38 +556,6 @@ export default function FileTracking() {
     setTrayPage(1);
     setSearchPage(1);
   }, [filterCategory, sortOrder, searchQuery, activeTab]);
-
-  const fetchRecords = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('file_tracking_records' as any)
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.warn("Could not fetch remote records, using mock data", error);
-        return;
-      }
-      if (data && data.length > 0) {
-        setRecords(prev => {
-          const dbIds = new Set(data.map(d => d.tracking_id));
-          const mockFiltered = prev.filter(p => !dbIds.has(p.tracking_id));
-          const mappedData = data.map(d => ({
-            ...d,
-            mainCategory: d.main_category,
-            subCategory: d.sub_category
-          }));
-          return [...mappedData, ...mockFiltered];
-        });
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    fetchRecords();
-  }, []);
 
   useEffect(() => {
     // If navigated from BillDispatch with a bill in state
@@ -972,7 +883,7 @@ export default function FileTracking() {
                                   onClick={() => handleQRClick(file.cfo_diary_number, file.receiving_number)}
                                 >
                                   <img
-                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=35x35&data=${encodeURIComponent(`${window.location.origin}/public-track/${file.cfo_diary_number}/${file.receiving_number}`)}&color=0ea5e9`}
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=35x35&data=${encodeURIComponent(`${window.location.origin}/public-track/${file.cfo_diary_number}/${file.cfo_diary_number}`)}&color=0ea5e9`}
                                     alt="QR"
                                     className="w-8 h-8 mx-auto opacity-70 group-hover:opacity-100 transition-opacity rounded border border-border bg-white"
                                   />
@@ -1244,7 +1155,7 @@ export default function FileTracking() {
                           )}
                         </div>
                         <div className="mt-4 flex justify-end">
-                          <Button variant="outline" className="border-primary/20 hover:bg-primary/10" onClick={() => handleQRClick(file.cfo_diary_number, file.receiving_number)}>
+                          <Button variant="outline" className="border-primary/20 hover:bg-primary/10" onClick={() => handleQRClick(file.cfo_diary_number, file.cfo_diary_number)}>
                             <Printer className="w-4 h-4 mr-2" /> View Printable Slip
                           </Button>
                         </div>
@@ -1312,7 +1223,7 @@ export default function FileTracking() {
                           onClick={() => handleQRClick(selectedBill.cfo_diary_number || selectedBill.diary_no, selectedBill.receiving_number || selectedBill.tracking_id)}
                         >
                           <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(`${window.location.origin}/public-track/${selectedBill.cfo_diary_number || selectedBill.diary_no}/${selectedBill.receiving_number || selectedBill.tracking_id}`)}`}
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(`${window.location.origin}/public-track/${selectedBill.cfo_diary_number || selectedBill.diary_no}/${selectedBill.cfo_diary_number || selectedBill.diary_no}`)}`}
                             alt="QR"
                             className="w-12 h-12"
                           />
@@ -1368,10 +1279,10 @@ export default function FileTracking() {
                                   <TableCell className="text-center">
                                     <div
                                       className="cursor-zoom-in transition-transform hover:scale-110"
-                                      onClick={() => handleQRClick(file.cfo_diary_number, file.receiving_number)}
+                                      onClick={() => handleQRClick(file.cfo_diary_number, file.cfo_diary_number)}
                                     >
                                       <img
-                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=35x35&data=${encodeURIComponent(`${window.location.origin}/public-track/${file.cfo_diary_number}/${file.receiving_number}`)}&color=0ea5e9`}
+                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=35x35&data=${encodeURIComponent(`${window.location.origin}/public-track/${file.cfo_diary_number}/${file.cfo_diary_number}`)}&color=0ea5e9`}
                                         alt="QR"
                                         className="w-8 h-8 mx-auto rounded border border-border bg-white"
                                       />
@@ -1537,7 +1448,7 @@ export default function FileTracking() {
             </CardHeader>
             <CardContent id="registration-form-container" onKeyDown={handleKeyDown} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6 border-t border-border/50">
               <div className="space-y-2">
-                <Label className="text-xs uppercase font-bold text-muted-foreground">CFO Office Diary No <span className="text-emerald-500 text-[9px]">(Auto-Generated)</span></Label>
+                <Label className="text-xs uppercase font-bold text-muted-foreground">CFO Office Diary No <span className="text-emerald-500 text-[9px]">(Managed by DB)</span></Label>
                 <Input
                   value={formData.cfo_diary_number}
                   readOnly
@@ -1568,7 +1479,7 @@ export default function FileTracking() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs uppercase font-bold text-muted-foreground">Receiving Number <span className="text-red-500">*</span></Label>
+                <Label className="text-xs uppercase font-bold text-muted-foreground">Receiving Number <span className="text-muted-foreground/50 text-[9px]">(Optional)</span></Label>
                 <Input
                   placeholder="Enter Receiving Number"
                   value={formData.receiving_number}
@@ -1914,7 +1825,7 @@ export default function FileTracking() {
             {selectedBill && (
               <div className="flex flex-col items-center gap-1">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`${window.location.origin}/public-track/${selectedBill.cfo_diary_number || selectedBill.diary_no}/${selectedBill.receiving_number || selectedBill.tracking_id}?sec=${selectedBill.mark_to || selectedBill.current_status || 'CFO'}`)}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`${window.location.origin}/public-track/${selectedBill.cfo_diary_number || selectedBill.diary_no}/${selectedBill.cfo_diary_number || selectedBill.diary_no}?sec=${selectedBill.mark_to || selectedBill.current_status || 'CFO'}`)}`}
                   alt="QR Code"
                   className="w-24 h-24 border border-black p-1"
                 />
@@ -2057,7 +1968,7 @@ export default function FileTracking() {
                       <div className="mt-4 p-5 bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-[30px] flex flex-col items-center gap-4 text-center shadow-inner print:bg-white print:border-none print:shadow-none">
                         <div className="bg-white p-3 rounded-2xl shadow-xl border-4 border-[#0ea5e9]/20 flex flex-col items-center">
                           <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/public-track/${qrFullScreen?.diary}/${qrFullScreen?.receiving}`)}&color=0ea5e9`}
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/public-track/${qrFullScreen?.diary}/${qrFullScreen?.diary}`)}&color=0ea5e9`}
                             alt="QR"
                             className="w-28 h-28"
                           />

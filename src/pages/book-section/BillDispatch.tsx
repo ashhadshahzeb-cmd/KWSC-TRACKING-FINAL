@@ -96,56 +96,9 @@ export default function BillDispatch() {
 
   useEffect(() => {
     fetchEntries();
-    // Fallback mock data if table doesn't exist yet
-    if (diaryEntries.length === 0) {
-      setDiaryEntries([
-        {
-          id: 12,
-          diary_no: "Diary-12",
-          tracking_id: "FL-2024-0012",
-          received_date: "2024-04-12",
-          party_name: "Pakistan State Oil (PSO)",
-          subject: "Fuel Supply for KW&SB Vehicles",
-          amount: 1250000,
-          ref_no: "PSO-MAR-2024",
-          status: "forwarded",
-          forwarded_to: "pol_bills",
-          history: [
-            { step: "Inward Entry", date: "2024-04-12T09:00:00Z", location: "Bill Dispatch", remarks: "Received bulk fuel invoice" },
-            { step: "Forwarded", date: "2024-04-12T11:30:00Z", location: "POL Bills Section", remarks: "For consumption verification" }
-          ]
-        },
-        {
-          id: 101,
-          diary_no: "D-101",
-          tracking_id: "FL-2024-0101",
-          received_date: "2024-04-05",
-          party_name: "Aga Khan University Hospital",
-          subject: "Emergency Medical Claim - Staff ID #4492",
-          amount: 45000,
-          ref_no: "MED-AKI-99",
-          status: "forwarded",
-          forwarded_to: "medical",
-          history: [
-            { step: "Inward Entry", date: "2024-04-05T10:00:00Z", location: "Bill Dispatch", remarks: "Priority medical case" },
-            { step: "Forwarded", date: "2024-04-05T14:00:00Z", location: "Medical Section", remarks: "Verify treatment bill" }
-          ]
-        },
-        {
-          id: 202,
-          diary_no: "KW-202",
-          tracking_id: "FL-2024-0202",
-          received_date: "2024-04-08",
-          party_name: "Indus Constructions Ltd",
-          subject: "Sewerage Pipe Replacement - District Central",
-          amount: 8500000,
-          ref_no: "IC-PROJ-021",
-          status: "pending",
-          history: [
-            { step: "Inward Entry", date: "2024-04-08T15:00:00Z", location: "Bill Dispatch", remarks: "Completion certificate attached" }
-          ]
-        },
-      ]);
+    // Ensure entries is an array even if empty
+    if (!diaryEntries) {
+      setDiaryEntries([]);
     }
   }, []);
 

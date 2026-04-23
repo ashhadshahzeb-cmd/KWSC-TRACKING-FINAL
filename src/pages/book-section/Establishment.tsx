@@ -20,11 +20,7 @@ interface StaffRecord {
 }
 
 export default function Establishment() {
-  const [records, setRecords] = useState<StaffRecord[]>([
-    { id: '1', name: 'Ahmed Ali', designation: 'Assistant Director', department: 'Finance', status: 'active', joiningDate: '2015-06-12', empId: 'KW-10293' },
-    { id: '2', name: 'Sara Khan', designation: 'Senior Accountant', department: 'Accounts', status: 'active', joiningDate: '2018-02-20', empId: 'KW-10442' },
-    { id: '3', name: 'Zamir Ahmed', designation: 'Superintendent', department: 'Establishment', status: 'retired', joiningDate: '1985-01-10', empId: 'KW-00921' },
-  ]);
+  const [records, setRecords] = useState<StaffRecord[]>([]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isAdding, setIsAdding] = useState(false);

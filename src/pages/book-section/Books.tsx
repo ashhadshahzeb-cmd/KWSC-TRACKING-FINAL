@@ -21,11 +21,7 @@ interface RegisterRecord {
 }
 
 export default function Books() {
-  const [records, setRecords] = useState<RegisterRecord[]>([
-    { id: '1', bookName: 'Main Cash Book - Head Office', type: 'cash_book', volumeNo: 'Vol-42', financialYear: '2023-24', totalEntries: 450, lastUpdated: '2024-03-15', status: 'active' },
-    { id: '2', bookName: 'Contractor Ledger - North', type: 'ledger', volumeNo: 'L-12', financialYear: '2023-24', totalEntries: 120, lastUpdated: '2024-02-28', status: 'active' },
-    { id: '3', bookName: 'Stationery Stock Register', type: 'stock', volumeNo: 'S-05', financialYear: '2022-23', totalEntries: 890, lastUpdated: '2023-06-30', status: 'completed' },
-  ]);
+  const [records, setRecords] = useState<RegisterRecord[]>([]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isAdding, setIsAdding] = useState(false);

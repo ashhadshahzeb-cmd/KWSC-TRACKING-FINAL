@@ -39,24 +39,14 @@ export default function PublicTracking() {
             cfo_diary_number: data.cfo_diary_number,
             receiving_number: data.receiving_number,
             subject: data.subject,
-            mainCategory: data.mainCategory,
-            subCategory: data.subCategory,
+            mainCategory: data.main_category || 'General',
+            subCategory: data.sub_category || 'Miscellaneous',
             status: "In-Progress",
             forward_to: data.mark_to,
             history: data.history || []
           });
         } else {
-          // Fallback mockup if no record found (for local dev testing without DB)
-          setRecord({
-            cfo_diary_number: diaryNo,
-            receiving_number: receivingNo,
-            subject: "Sample File Tracking Record (Record Not Found in DB)",
-            mainCategory: "employee",
-            subCategory: "medical_case",
-            status: "Unknown",
-            forward_to: searchParams.get('sec') || "PROCESSING",
-            history: []
-          });
+          setRecord(null);
         }
         setLoading(false);
       } catch (err) {
@@ -73,6 +63,30 @@ export default function PublicTracking() {
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           <p className="text-sm font-bold text-zinc-500 uppercase tracking-widest">Verifying Record...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!record) {
+    return (
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6">
+        <Card className="max-w-md w-full border-none shadow-2xl rounded-[40px] overflow-hidden">
+          <div className="bg-rose-500 p-8 text-center">
+            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <ShieldCheck className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-white text-2xl font-black uppercase tracking-tighter">Record Not Found</h2>
+            <p className="text-white/70 text-xs font-bold uppercase tracking-widest mt-2">Invalid or missing tracking data</p>
+          </div>
+          <CardContent className="p-8 text-center space-y-6">
+            <p className="text-sm text-zinc-500 font-medium leading-relaxed">
+              We couldn't find any official file tracking record matching the provided identifiers. Please verify the Diary Number and Receiving Number.
+            </p>
+            <Button className="w-full bg-zinc-900 hover:bg-zinc-800 rounded-2xl h-12 font-bold uppercase tracking-widest" onClick={() => navigate('/')}>
+              Back to Portal
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
