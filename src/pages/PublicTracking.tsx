@@ -28,13 +28,20 @@ export default function PublicTracking() {
     const fetchRecord = async () => {
       setLoading(true);
       try {
+        console.log("Fetching record for:", { diaryNo, receivingNo });
         const { data, error } = await supabase
           .from('file_tracking_records' as any)
           .select('*')
-          .or(`cfo_diary_number.eq.${diaryNo},receiving_number.eq.${receivingNo}`)
+          // Search by both to handle old and new QR codes
+          .or(`cfo_diary_number.eq."${diaryNo}",receiving_number.eq."${receivingNo}",cfo_diary_number.eq."${receivingNo}",receiving_number.eq."${diaryNo}"`)
           .maybeSingle();
 
+        if (error) {
+          console.error("Supabase error:", error);
+        }
+
         if (data) {
+          console.log("Record found:", data);
           setRecord({
             cfo_diary_number: data.cfo_diary_number,
             receiving_number: data.receiving_number,
@@ -46,10 +53,12 @@ export default function PublicTracking() {
             history: data.history || []
           });
         } else {
+          console.warn("No record found for provided identifiers");
           setRecord(null);
         }
         setLoading(false);
       } catch (err) {
+        console.error("Fetch error:", err);
         setLoading(false);
       }
     };
