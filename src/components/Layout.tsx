@@ -27,6 +27,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useTheme } from "@/components/ThemeProvider";
 import { Sun, Moon } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 
 const getTimeBasedGreeting = () => {
   const hour = new Date().getHours();
@@ -331,18 +332,44 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col overflow-auto w-full relative">
-        <div className="lg:hidden flex items-center p-4 border-b border-white/5 bg-sidebar/80 backdrop-blur-md sticky top-0 z-30">
-          <button onClick={() => setMobileOpen(true)} className="p-2 -ml-2 text-foreground/80 hover:text-primary">
-            <Menu className="w-6 h-6" />
-          </button>
-          <div className="ml-2 font-black tracking-tighter text-[#0ea5e9] flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            KW&SC FINANCE
+      <main className="flex-1 flex flex-col overflow-hidden w-full relative bg-zinc-50 dark:bg-[#09090b]">
+        {/* Unified Top Header */}
+        <header className="h-16 border-b border-border/40 bg-background/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-8 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setMobileOpen(true)} 
+              className="p-2 -ml-2 text-foreground/80 hover:text-primary lg:hidden"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div className="hidden lg:flex items-center gap-2">
+              <Shield className="w-5 h-5 text-primary" />
+              <h2 className="text-xs font-black tracking-[0.2em] uppercase text-muted-foreground">Executive Suite</h2>
+            </div>
+            <div className="lg:hidden font-black tracking-tighter text-primary flex items-center gap-2">
+              <Shield className="w-5 h-5" />
+              KW&SC
+            </div>
           </div>
-        </div>
 
-        <div ref={mainRef} className="p-4 md:p-6 w-full max-w-[1400px] mx-auto opacity-0 flex-1">{children}</div>
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="hidden md:flex flex-col items-end mr-2">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{userRole?.replace('_', ' ') || 'GUEST'}</span>
+              <span className="text-[11px] font-black tracking-tight">{isCFORole ? 'ADMINISTRATOR' : 'DEPARTMENTAL'}</span>
+            </div>
+            
+            <div className="h-8 w-[1px] bg-border/50 mx-1 hidden md:block" />
+            
+            {/* Real-time Notifications Bell */}
+            <NotificationBell />
+            
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+              <Users className="w-4 h-4" />
+            </div>
+          </div>
+        </header>
+
+        <div ref={mainRef} className="flex-1 overflow-auto p-4 md:p-6 w-full max-w-[1600px] mx-auto opacity-0">{children}</div>
       </main>
     </div>
   );

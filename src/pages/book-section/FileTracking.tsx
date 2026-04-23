@@ -104,7 +104,7 @@ export default function FileTracking() {
     remarks: "",
   });
 
-  const [notifications, setNotifications] = useState<any[]>([]);
+
   const [reportDateFilter, setReportDateFilter] = useState("all");
 
   // Helper for CSV Export
@@ -225,7 +225,7 @@ export default function FileTracking() {
         console.warn("Table file_tracking_records not found or error:", error);
         return;
       }
-      
+
       if (data) {
         // Map database fields to component state fields
         const mappedData = data.map((item: any) => ({
@@ -467,7 +467,7 @@ export default function FileTracking() {
         const newEntry = {
           tracking_id: trackingId,
           // cfo_diary_number is handled by DB default trigger if we pass it as it is or omit it
-          cfo_diary_number: formData.cfo_diary_number.includes('XXXX') ? undefined : formData.cfo_diary_number, 
+          cfo_diary_number: formData.cfo_diary_number.includes('XXXX') ? undefined : formData.cfo_diary_number,
           inward_date: formData.inward_date,
           received_from: formData.received_from,
           receiving_number: formData.receiving_number || null,
@@ -738,44 +738,7 @@ export default function FileTracking() {
             </div>
           </div>
 
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="icon" className="relative">
-                <Bell className="w-5 h-5" />
-                {incomingFiles.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] flex items-center justify-center animate-pulse">{incomingFiles.length}</span>}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <ArrowDownCircle className="w-5 h-5 text-emerald-500" />
-                  Incoming Files Tray
-                </DialogTitle>
-                <DialogDescription>FILES PENDING YOUR REVIEW AND SIGNATURE</DialogDescription>
-              </DialogHeader>
-              <ScrollArea className="h-[300px] mt-4">
-                {processedIncomingFiles.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                    <Check className="w-10 h-10 opacity-20" />
-                    <p className="text-sm">No new files for your section</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {processedIncomingFiles.map((file, i) => (
-                      <div key={i} className="p-3 rounded-lg border border-border bg-muted/30 hover:bg-primary/5 cursor-pointer transition-colors" onClick={() => handleProcessFile(file)}>
-                        <div className="flex justify-between items-start">
-                          <h4 className="font-bold text-sm">{file.subject}</h4>
-                          <Badge>{file.receiving_number}</Badge>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-1">From: {file.received_from}</p>
-                        <Button variant="ghost" size="sm" className="w-full mt-2 h-7 text-[10px] border border-primary/20">Open & Sign File</Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </DialogContent>
-          </Dialog>
+
 
           {/* Sign Out Button */}
           <Button
@@ -883,7 +846,7 @@ export default function FileTracking() {
                                   onClick={() => handleQRClick(file.cfo_diary_number, file.receiving_number)}
                                 >
                                   <img
-                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=35x35&data=${encodeURIComponent(`${window.location.origin}/public-track/${file.cfo_diary_number}/${file.cfo_diary_number}`)}&color=0ea5e9`}
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=35x35&data=${encodeURIComponent(`${window.location.origin}/public-track/${file.cfo_diary_number}/${file.receiving_number}`)}&color=0ea5e9`}
                                     alt="QR"
                                     className="w-8 h-8 mx-auto opacity-70 group-hover:opacity-100 transition-opacity rounded border border-border bg-white"
                                   />
@@ -1155,7 +1118,7 @@ export default function FileTracking() {
                           )}
                         </div>
                         <div className="mt-4 flex justify-end">
-                          <Button variant="outline" className="border-primary/20 hover:bg-primary/10" onClick={() => handleQRClick(file.cfo_diary_number, file.cfo_diary_number)}>
+                          <Button variant="outline" className="border-primary/20 hover:bg-primary/10" onClick={() => handleQRClick(file.cfo_diary_number, file.receiving_number)}>
                             <Printer className="w-4 h-4 mr-2" /> View Printable Slip
                           </Button>
                         </div>
@@ -1223,7 +1186,7 @@ export default function FileTracking() {
                           onClick={() => handleQRClick(selectedBill.cfo_diary_number || selectedBill.diary_no, selectedBill.receiving_number || selectedBill.tracking_id)}
                         >
                           <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(`${window.location.origin}/public-track/${selectedBill.cfo_diary_number || selectedBill.diary_no}/${selectedBill.cfo_diary_number || selectedBill.diary_no}`)}`}
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(`${window.location.origin}/public-track/${selectedBill.cfo_diary_number || selectedBill.diary_no}/${selectedBill.receiving_number || selectedBill.tracking_id}`)}`}
                             alt="QR"
                             className="w-12 h-12"
                           />
@@ -1279,10 +1242,10 @@ export default function FileTracking() {
                                   <TableCell className="text-center">
                                     <div
                                       className="cursor-zoom-in transition-transform hover:scale-110"
-                                      onClick={() => handleQRClick(file.cfo_diary_number, file.cfo_diary_number)}
+                                      onClick={() => handleQRClick(file.cfo_diary_number, file.receiving_number)}
                                     >
                                       <img
-                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=35x35&data=${encodeURIComponent(`${window.location.origin}/public-track/${file.cfo_diary_number}/${file.cfo_diary_number}`)}&color=0ea5e9`}
+                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=35x35&data=${encodeURIComponent(`${window.location.origin}/public-track/${file.cfo_diary_number}/${file.receiving_number}`)}&color=0ea5e9`}
                                         alt="QR"
                                         className="w-8 h-8 mx-auto rounded border border-border bg-white"
                                       />
@@ -1825,7 +1788,7 @@ export default function FileTracking() {
             {selectedBill && (
               <div className="flex flex-col items-center gap-1">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`${window.location.origin}/public-track/${selectedBill.cfo_diary_number || selectedBill.diary_no}/${selectedBill.cfo_diary_number || selectedBill.diary_no}?sec=${selectedBill.mark_to || selectedBill.current_status || 'CFO'}`)}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`${window.location.origin}/public-track/${selectedBill.cfo_diary_number || selectedBill.diary_no}/${selectedBill.receiving_number || selectedBill.tracking_id}?sec=${selectedBill.mark_to || selectedBill.current_status || 'CFO'}`)}`}
                   alt="QR Code"
                   className="w-24 h-24 border border-black p-1"
                 />
@@ -1968,7 +1931,7 @@ export default function FileTracking() {
                       <div className="mt-4 p-5 bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-[30px] flex flex-col items-center gap-4 text-center shadow-inner print:bg-white print:border-none print:shadow-none">
                         <div className="bg-white p-3 rounded-2xl shadow-xl border-4 border-[#0ea5e9]/20 flex flex-col items-center">
                           <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/public-track/${qrFullScreen?.diary}/${qrFullScreen?.diary}`)}&color=0ea5e9`}
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/public-track/${qrFullScreen?.diary}/${qrFullScreen?.receiving}`)}&color=0ea5e9`}
                             alt="QR"
                             className="w-28 h-28"
                           />
