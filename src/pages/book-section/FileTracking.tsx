@@ -90,7 +90,7 @@ export default function FileTracking() {
   // New Form State
   const [isSavingForm, setIsSavingForm] = useState(false);
   const [formData, setFormData] = useState({
-    cfo_diary_number: `CFO-${new Date().getFullYear()}-XXXX`,
+    cfo_diary_number: "",
     inward_date: new Date().toISOString().split('T')[0],
     received_from: "",
     receiving_number: "",
@@ -356,17 +356,10 @@ export default function FileTracking() {
   };
 
   const handleFormReset = async () => {
-    // Fetch next sequential diary number from database for preview
-    let nextDiaryNo = `CFO-${new Date().getFullYear()}-XXXX`;
-    try {
-      const { data, error } = await supabase.rpc('get_next_cfo_diary_number');
-      if (!error && data) nextDiaryNo = data;
-    } catch (err) {
-      console.error("Error fetching next diary number:", err);
-    }
+
 
     setFormData({
-      cfo_diary_number: nextDiaryNo,
+      cfo_diary_number: "",
       inward_date: new Date().toISOString().split('T')[0],
       received_from: "",
       receiving_number: "", // Now optional and empty by default
@@ -467,7 +460,7 @@ export default function FileTracking() {
         const newEntry = {
           tracking_id: trackingId,
           // cfo_diary_number is handled by DB default trigger if we pass it as it is or omit it
-          cfo_diary_number: formData.cfo_diary_number.includes('XXXX') ? undefined : formData.cfo_diary_number,
+          cfo_diary_number: formData.cfo_diary_number,
           inward_date: formData.inward_date,
           received_from: formData.received_from,
           receiving_number: formData.receiving_number || null,
@@ -1411,11 +1404,11 @@ export default function FileTracking() {
             </CardHeader>
             <CardContent id="registration-form-container" onKeyDown={handleKeyDown} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6 border-t border-border/50">
               <div className="space-y-2">
-                <Label className="text-xs uppercase font-bold text-muted-foreground">CFO Office Diary No <span className="text-emerald-500 text-[9px]">(Managed by DB)</span></Label>
                 <Input
+                  placeholder="Enter Diary Number (e.g. CFO-2024-001)"
                   value={formData.cfo_diary_number}
-                  readOnly
-                  className="bg-muted/5 border-border/50 font-mono opacity-70 cursor-not-allowed font-bold text-primary"
+                  onChange={e => setFormData({ ...formData, cfo_diary_number: e.target.value })}
+                  className="bg-muted/20 border-border/50 font-mono font-bold text-primary"
                 />
               </div>
 
