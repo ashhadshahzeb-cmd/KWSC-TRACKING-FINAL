@@ -13,7 +13,7 @@ export interface DepartmentUser {
 
 export const DEPARTMENT_USERS: DepartmentUser[] = [
   { email: 'cfo@kwsb.gov.pk',              password: 'cfo@12345',    roleId: 'cfo',              displayName: 'CFO' },
-  { email: 'cia@kwsb.gov.pk',              password: 'cia@12345',    roleId: 'cia',              displayName: 'CIA' },
+  { email: 'cia@kwsb.gov.pk',              password: 'gmqaBhK6@90',    roleId: 'cia',              displayName: 'CIA' },
   { email: 'budget@kwsb.gov.pk',           password: 'budget@12345', roleId: 'budget',            displayName: 'BUDGET' },
   { email: 'pension@kwsb.gov.pk',          password: 'pension@12345',roleId: 'pension',           displayName: 'PENSION' },
   { email: 'fund@kwsb.gov.pk',             password: 'fund@12345',   roleId: 'fund',              displayName: 'FUND' },
